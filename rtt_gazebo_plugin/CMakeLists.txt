@@ -4,30 +4,21 @@ project(rtt_gazebo_plugin)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-find_package(catkin REQUIRED)
-
-# Load catkin and all dependencies required for this package
-find_package(catkin REQUIRED COMPONENTS
-  roscpp
-  gazebo_ros
-  controller_manager
-  hardware_interface 
-  transmission_interface
-  pluginlib
-  )
+find_package(catkin REQUIRED COMPONENTS)
 
 # Depend on system install of Gazebo and SDFormat
 find_package(gazebo REQUIRED)
 find_package(SDF REQUIRED)
+find_package(OROCOS-RTT REQUIRED)
+include(${OROCOS-RTT_USE_FILE_PATH}/UseOROCOS-RTT.cmake )
+
+find_package(Orocos-KDL)
+include_directories(${Orocos-KDL_INCLUDE_DIRS})
+link_directories(${Orocos-KDL_LIBRARY_DIRS})
 
 catkin_package(
-  CATKIN_DEPENDS
-  roscpp
-  gazebo_ros
-  controller_manager
-  pluginlib
-  transmission_interface
   INCLUDE_DIRS include
+  DEPENDS rtt
   )
 
 link_directories(${GAZEBO_LIBRARY_DIRS})
@@ -38,24 +29,14 @@ include_directories(include
   ${SDFormat_INCLUDE_DIRS}
   )
 
-## Libraries
-add_library(${PROJECT_NAME} src/ros_control_plugin.cpp)
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${SDFormat_LIBRARIES})
+orocos_use_package( ocl-taskbrowser )
+orocos_use_package( ocl-deployment )
+orocos_use_package( ocl-logging )
 
-add_library(default_robot_hw_sim src/default_robot_hw_sim.cpp)
-target_link_libraries(default_robot_hw_sim ${catkin_LIBRARIES} ${SDFormat_LIBRARIES})
+## Gazebo RTT plugin
+add_library(${PROJECT_NAME} src/rtt_plugin.cpp)
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${SDFormat_LIBRARIES} orocos-kdl)
 
-## Install
-install(TARGETS ${PROJECT_NAME} default_robot_hw_sim
-  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  )
-
-install(DIRECTORY include/${PROJECT_NAME}/
-  DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-  )
-
-install(FILES robot_hw_sim_plugins.xml
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-  )
-
-
+## Default component
+orocos_plugin(default_gazebo_component src/default_gazebo_component.cpp)
+target_link_libraries(default_gazebo_component orocos-kdl)

@@ -52,62 +52,49 @@
 #include <rtt/Logger.hpp>
 
 
+#include <rtt/scripting/Scripting.hpp>
+#include <rtt/transports/corba/corba.h>
+#include <rtt/transports/corba/TaskContextServer.hpp>
+
+
+
 class RTTPlugin : public gazebo::ModelPlugin
 {
 public:
 
-  virtual ~RosControlPlugin();
+  virtual ~RTTPlugin();
 
   // Overloaded Gazebo entry point
-  void Load(gazebo::physics::ModelPtr parent, sdf::ElementPtr sdf)
+  void Load(gazebo::physics::ModelPtr parent, sdf::ElementPtr sdf);
 
-  // Load in seperate thread from Gazebo in case ROS is blocking
-  void loadThread()
+  // Load in seperate thread from Gazebo in case something blocks
+  void loadThread();
 
   // Called by the world update start event
-  void Update()
-
-  // Get the URDF XML from the parameter server
-  std::string getURDF(std::string param_name) const
-
-  // Get Transmissions from the URDF
-  bool parseTransmissionsFromURDF()
+  void Update();
 
 private:
-  // deferred load in case ros is blocking
+  // deferred load in case something blocks
   boost::thread deferred_load_thread_;
-
-  // Node Handles
-  ros::NodeHandle nh_; // no namespace
-  ros::NodeHandle model_nh_; // namespaces to robot name
-
-  std::string robot_namespace_;
-  std::string robot_description_;
 
   // Gazebo structures
   gazebo::physics::ModelPtr parent_model_;
   sdf::ElementPtr sdf_;
   gazebo::event::ConnectionPtr update_connection_;
+  std::string deployer_name_;
 
   // Orocos Structures
-  static std::vector<OCL::DeploymentComponent> dployers;
+  static std::map<std::string,boost::shared_ptr<OCL::DeploymentComponent> > deployers;
 
   RTT::TaskContext* gazebo_component_;
-  boost::scoped_ptr<RTT::TaskContext> gazebo_component_collector_;
 
-  RTT::OperationCaller<void(void)> gazebo_update_; = 
-    gazebo_component_->provides("gazebo")->getOperation("update");
-
-  // Timing
-  ros::Duration control_period_;
-  ros::Time last_sim_time_ros_;
-
+  RTT::OperationCaller<void(void)> gazebo_update_;
 };
 
 // Register this plugin with the simulator
 GZ_REGISTER_MODEL_PLUGIN(RTTPlugin);
 
-RTTPlugin::~RosControlPlugin()
+RTTPlugin::~RTTPlugin()
 {
   // Disconnect from gazebo events
   gazebo::event::Events::DisconnectWorldUpdateBegin(update_connection_);
@@ -116,8 +103,6 @@ RTTPlugin::~RosControlPlugin()
 // Overloaded Gazebo entry point
 void RTTPlugin::Load(gazebo::physics::ModelPtr parent, sdf::ElementPtr sdf)
 {
-  ROS_INFO_STREAM("Loading ros_control_gazebo_plugin...");
-  
   // Save pointers to the model
   parent_model_ = parent;
   sdf_ = sdf;
@@ -134,25 +119,25 @@ void RTTPlugin::Load(gazebo::physics::ModelPtr parent, sdf::ElementPtr sdf)
 
   // Create deployer if necessary
   if(deployers.find(deployer_name_) == deployers.end()) {
-    deployers[deployer_name_] = OCL::DeploymentComponent(deployer_name_);
+    deployers[deployer_name_] = boost::make_shared<OCL::DeploymentComponent>(deployer_name_);
 
     // Setup TaskContext server
-    if(CORBA::is_nil(RTT::TaskContextServer::orb)) {
+    if(CORBA::is_nil(RTT::corba::TaskContextServer::orb)) {
       // Initialize orb
-      RTT::TaskContextServer::InitOrb(argc, argv);
+      char **argv = NULL;
+      RTT::corba::TaskContextServer::InitOrb(0, argv);
       // Propcess orb requests in a thread
-      RTT::TaskContext::ThreadOrb();
+      RTT::corba::TaskContextServer::ThreadOrb();
     }
 
     // Attach the taskcontext server to this component
-    TaskContextServer * tc_server = RTT::TaskContextServer::Create( &deployers[deployer_name_] );
+    RTT::corba::TaskContextServer * tc_server = RTT::corba::TaskContextServer::Create( deployers[deployer_name_].get() );
   }
 
-  // ros callback queue for processing subscription
-  deferred_load_thread_ = boost::thread(boost::bind(&RosControlPlugin::loadThread, this));
+  deferred_load_thread_ = boost::thread(boost::bind(&RTTPlugin::loadThread, this));
 }
 
-// Load in seperate thread from Gazebo in case ROS is blocking
+// Load in seperate thread from Gazebo in case something blocks
 void RTTPlugin::loadThread()
 {
   // Error message if the model couldn't be found
@@ -164,7 +149,7 @@ void RTTPlugin::loadThread()
   if(sdf_->HasElement("opsScriptFile")) {
     std::string ops_script_file;
     ops_script_file = sdf_->GetElement("opsScriptFile")->Get<std::string>();
-    if(!deployers[deployer_name_].runScript(opsScriptFile)) {
+    if(!deployers[deployer_name_]->runScript(ops_script_file)) {
       return;
     }
   }
@@ -173,7 +158,7 @@ void RTTPlugin::loadThread()
   if(sdf_->HasElement("opsScript")) {
     std::string ops_script;
     ops_script = sdf_->GetElement("opsScript")->Get<std::string>();
-    if(!deployers[deployer_name_].getProvider<Scripting>("scripting")->eval(ops_script)) {
+    if(!deployers[deployer_name_]->getProvider<RTT::Scripting>("scripting")->eval(ops_script)) {
       return;
     }
   }
@@ -183,30 +168,29 @@ void RTTPlugin::loadThread()
 
   // Check if there is a special gazebo component
   if(sdf_->HasElement("component")) {
+    // Get the component name
     std::string gazebo_component_name = sdf_->GetElement("component")->Get<std::string>();
 
-    // Get the gazebo component from the deployer
-    if(deployers[deployer_name_].hasPeer(gazebo_component_name)) {
-      gazebo_component_ = deployers[deployer_name_].getPeer(gazebo_component_name);
+    // Get the gazebo component from the deployer by name
+    if(deployers[deployer_name_]->hasPeer(gazebo_component_name)) {
+      gazebo_component_ = deployers[deployer_name_]->getPeer(gazebo_component_name);
     } else {
       return;
     }
-
   } else {
+    // Import the default component
+    deployers[deployer_name_]->import("rtt_gazebo_plugin");
+    deployers[deployer_name_]->loadComponent(parent_model_->GetName(),"DefaultGazeboComponent");
     // Create a gazebo component with the same name as the model
-    gazebo_component_ = new rtt_gazebo_plugin::DefaultGazeboComponent(parent->getName());
-    // Store a scoped ptr to clean this up later
-    gazebo_component_collector_.reset(gazebo_component_);
-    // Connect the gazebo component to the deployer
-    gazebo_component_->connectPeers(&deployers[deployer_name_]);
+    gazebo_component_ = deployers[deployer_name_]->getPeer(parent_model_->GetName());
   }
 
   // Make sure the component has the required interfaces
-  if( !gazebo_component_->provides()->hasService("gazebo") ||
+  if( gazebo_component_ == NULL ||
+      !gazebo_component_->provides()->hasService("gazebo") ||
       !gazebo_component_->provides("gazebo")->hasOperation("setModel") ||
       !gazebo_component_->provides("gazebo")->hasOperation("getModel") ||
-      !gazebo_component_->provides("gazebo")->hasOperation("update") ||
-      ) 
+      !gazebo_component_->provides("gazebo")->hasOperation("update")) 
   {
     return;
   }
@@ -236,7 +220,7 @@ void RTTPlugin::Update()
   // Update the RTT time to match the gazebo time
   using namespace RTT::os;
   TimeService *rtt_time = TimeService::Instance();
-  TimeService::Seconds dt = std::max(0.0,TimeService::Seconds((gz_time_now.sec*1E6 + gz_time_now.nsec) - rtt_time->getNSsecs()));
+  TimeService::Seconds dt = std::max(0.0,TimeService::Seconds((gz_time_now.sec*1E6 + gz_time_now.nsec) - rtt_time->getNSecs()));
   rtt_time->secondsChange(dt);
 
   // Call orocos gazebo component gazeboUpdate()

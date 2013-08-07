@@ -8,7 +8,6 @@
 
 // Orocos
 #include <rtt/TaskContext.hpp>
-#include <ocl/LoggingService.hpp>
 #include <rtt/Logger.hpp>
 
 namespace rtt_gazebo_plugin {
@@ -35,11 +34,11 @@ namespace rtt_gazebo_plugin {
       gazebo_joints_ = model_->GetJoints();
 
       // Get the joint names
-      for(std::vector<gazebo::physics::JointPtr>::iterator it=joints->begin();
-          it != joints->end();
+      for(std::vector<gazebo::physics::JointPtr>::iterator it=gazebo_joints_.begin();
+          it != gazebo_joints_.end();
           ++it)
       {
-        joint_names_.push_back(it->GetName());
+        joint_names_.push_back((**it).GetName());
       }
 
       return true;
