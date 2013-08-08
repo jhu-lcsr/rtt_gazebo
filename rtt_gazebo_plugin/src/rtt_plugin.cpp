@@ -84,6 +84,8 @@ private:
   std::string deployer_name_;
 
   // Orocos Structures
+  static boost::shared_ptr<OCL::DeploymentComponent> gazebo_deployer;
+  static RTT::corba::TaskContextServer * taskcontext_server;
   static std::map<std::string,boost::shared_ptr<OCL::DeploymentComponent> > deployers;
 
   RTT::TaskContext* gazebo_component_;
@@ -110,18 +112,12 @@ void RTTPlugin::Load(gazebo::physics::ModelPtr parent, sdf::ElementPtr sdf)
   // Disable the RTT system clock so Gazebo can manipulate time
   RTT::os::TimeService::Instance()->enableSystemClock(false);
 
-  // Check if this deployer should have a custom name
-  if(sdf_->HasElement("deployer")) {
-    deployer_name_ = sdf_->GetElement("deployer")->Get<std::string>();
-  } else {
-    deployer_name_ = "deployer"; 
-  }
+  // Create main gazebo deployer if necessary
+  if(gazebo_deployer.get() == NULL) {
+    // Create the gazebo deployer
+    gazebo_deployer =  boost::make_shared<OCL::DeploymentComponent>("gazebo");
 
-  // Create deployer if necessary
-  if(deployers.find(deployer_name_) == deployers.end()) {
-    deployers[deployer_name_] = boost::make_shared<OCL::DeploymentComponent>(deployer_name_);
-
-    // Setup TaskContext server
+    // Setup TaskContext server if necessary
     if(CORBA::is_nil(RTT::corba::TaskContextServer::orb)) {
       // Initialize orb
       char **argv = NULL;
@@ -131,7 +127,21 @@ void RTTPlugin::Load(gazebo::physics::ModelPtr parent, sdf::ElementPtr sdf)
     }
 
     // Attach the taskcontext server to this component
-    RTT::corba::TaskContextServer * tc_server = RTT::corba::TaskContextServer::Create( deployers[deployer_name_].get() );
+    taskcontext_server = 
+      RTT::corba::TaskContextServer::Create( deployers[deployer_name_].get() );
+  }
+
+  // Check if this deployer should have a custom name
+  if(sdf_->HasElement("deployer")) {
+    deployer_name_ = sdf_->GetElement("deployer")->Get<std::string>();
+  } else {
+    deployer_name_ = "deployer"; 
+  }
+
+  // Create component deployer if necessary
+  if(deployers.find(deployer_name_) == deployers.end()) {
+    deployers[deployer_name_] = boost::make_shared<OCL::DeploymentComponent>(deployer_name_);
+    deployers[deployer_name_]->connectPeers(gazebo_deployer.get());
   }
 
   deferred_load_thread_ = boost::thread(boost::bind(&RTTPlugin::loadThread, this));
