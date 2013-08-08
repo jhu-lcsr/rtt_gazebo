@@ -34,9 +34,14 @@ orocos_use_package( ocl-deployment )
 orocos_use_package( ocl-logging )
 
 ## Gazebo RTT plugin
+add_definitions(-DRTT_COMPONENT)
 add_library(${PROJECT_NAME} src/rtt_plugin.cpp)
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${SDFormat_LIBRARIES} orocos-kdl)
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${SDFormat_LIBRARIES} orocos-kdl orocos-rtt-corba-${OROCOS_TARGET})
+
+set(CMAKE_BUILD_TYPE Debug)
 
 ## Default component
-orocos_plugin(default_gazebo_component src/default_gazebo_component.cpp)
-target_link_libraries(default_gazebo_component orocos-kdl)
+orocos_component(default_gazebo_component src/default_gazebo_component.cpp)
+target_link_libraries(default_gazebo_component orocos-kdl ${GAZEBO_LIBRARIES})
+
+orocos_generate_package()

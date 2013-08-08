@@ -37,6 +37,8 @@
 /* Author: Jonathan Bohren
    Desc:   Gazebo plugin for running OROCOS RTT components */
 
+#include <cstdlib>
+
 // Boost
 #include <boost/bind.hpp>
 
@@ -46,6 +48,7 @@
 #include <gazebo/common/common.hh>
 
 // Orocos
+#include <rtt/deployment/ComponentLoader.hpp>
 #include <ocl/DeploymentComponent.hpp>
 #include <ocl/TaskBrowser.hpp>
 #include <ocl/LoggingService.hpp>
@@ -96,6 +99,12 @@ private:
 // Register this plugin with the simulator
 GZ_REGISTER_MODEL_PLUGIN(RTTPlugin);
 
+// Static imeplementations
+boost::shared_ptr<OCL::DeploymentComponent> RTTPlugin::gazebo_deployer;
+RTT::corba::TaskContextServer * RTTPlugin::taskcontext_server;
+std::map<std::string,boost::shared_ptr<OCL::DeploymentComponent> > RTTPlugin::deployers;
+
+
 RTTPlugin::~RTTPlugin()
 {
   // Disconnect from gazebo events
@@ -108,6 +117,14 @@ void RTTPlugin::Load(gazebo::physics::ModelPtr parent, sdf::ElementPtr sdf)
   // Save pointers to the model
   parent_model_ = parent;
   sdf_ = sdf;
+
+  // Set orocos environment variables
+  std::string RTT_COMPONENT_PATH;
+
+  RTT_COMPONENT_PATH = std::string(getenv("RTT_COMPONENT_PATH"));
+  gzwarn << "RTT_COMPONENT_PATH: " << RTT_COMPONENT_PATH <<std::endl;
+
+  RTT::ComponentLoader::Instance()->setComponentPath(RTT_COMPONENT_PATH);
 
   // Disable the RTT system clock so Gazebo can manipulate time
   RTT::os::TimeService::Instance()->enableSystemClock(false);
@@ -128,7 +145,7 @@ void RTTPlugin::Load(gazebo::physics::ModelPtr parent, sdf::ElementPtr sdf)
 
     // Attach the taskcontext server to this component
     taskcontext_server = 
-      RTT::corba::TaskContextServer::Create( deployers[deployer_name_].get() );
+      RTT::corba::TaskContextServer::Create( gazebo_deployer.get() );
   }
 
   // Check if this deployer should have a custom name
@@ -189,7 +206,13 @@ void RTTPlugin::loadThread()
     }
   } else {
     // Import the default component
-    deployers[deployer_name_]->import("rtt_gazebo_plugin");
+    try {
+      deployers[deployer_name_]->import("rtt_gazebo_plugin");
+    } catch(std::runtime_error &err) {
+      gzerr << "Could not load rtt_gazebo_plugin: " << err.what() <<std::endl;
+      return;
+    }
+
     deployers[deployer_name_]->loadComponent(parent_model_->GetName(),"DefaultGazeboComponent");
     // Create a gazebo component with the same name as the model
     gazebo_component_ = deployers[deployer_name_]->getPeer(parent_model_->GetName());
@@ -207,13 +230,18 @@ void RTTPlugin::loadThread()
 
   // Set the component's gazebo model
   RTT::OperationCaller<bool(gazebo::physics::ModelPtr)> gazebo_set_model = 
-    gazebo_component_->provides("gazebo")->getOperation("set<odel");
+    gazebo_component_->provides("gazebo")->getOperation("setModel");
 
   gazebo_set_model(parent_model_);
 
   // Get gazebo update function
   gazebo_update_ = 
     gazebo_component_->provides("gazebo")->getOperation("update");
+
+  // Configure the gazebo component
+  if(!gazebo_component_->configure()) {
+    return;
+  }
 
   // Listen to the update event. This event is broadcast every simulation iteration.
   update_connection_ = 
@@ -224,6 +252,9 @@ void RTTPlugin::loadThread()
 // Called by the world update start event
 void RTTPlugin::Update()
 {
+  if(gazebo_component_ == NULL) {
+    return;
+  }
   // Get the simulation time
   gazebo::common::Time gz_time_now = parent_model_->GetWorld()->GetSimTime();
 

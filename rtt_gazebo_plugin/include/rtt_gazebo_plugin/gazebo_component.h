@@ -55,7 +55,9 @@ namespace rtt_gazebo_plugin {
     {
       // Synchronize with update()
       RTT::os::MutexLock lock(gazebo_mutex_);
-      this->gazeboUpdateHook();
+      if(this->getTaskState() == RTT::TaskContext::Running) {
+        this->gazeboUpdateHook();
+      }
     }
 
     //! Implemented by subclasses

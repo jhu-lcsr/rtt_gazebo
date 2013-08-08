@@ -6,11 +6,13 @@
 #include <kdl/jntarray.hpp>
 #include <kdl/jntarrayvel.hpp>
 
+#include <rtt/Component.hpp>
 #include <rtt/Port.hpp>
 
 #include <rtt_gazebo_plugin/gazebo_component.h>
 
-class DefaultGazeboComponent : public rtt_gazebo_plugin::GazeboComponent {
+class DefaultGazeboComponent : public rtt_gazebo_plugin::GazeboComponent
+{
 public:
 
   DefaultGazeboComponent(std::string const& name) : 
@@ -27,7 +29,8 @@ public:
 
   virtual bool ConfigureHook()
   {
-    state_posvel_.resize(gazebo_joints_.size());
+    state_posvel_.q.resize(gazebo_joints_.size());
+    state_posvel_.qdot.resize(gazebo_joints_.size());
     state_effort_.resize(gazebo_joints_.size());
     return true;
   }
@@ -84,3 +87,6 @@ protected:
   RTT::InputPort<KDL::JntArray> port_cmd_velocity;
   RTT::InputPort<KDL::JntArray> port_cmd_effort;
 };
+
+ORO_LIST_COMPONENT_TYPE(DefaultGazeboComponent)
+ORO_CREATE_COMPONENT_LIBRARY();
