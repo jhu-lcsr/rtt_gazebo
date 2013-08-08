@@ -27,7 +27,7 @@ public:
     this->provides("joint_command")->addPort("effort", port_cmd_effort);
   }
 
-  virtual bool ConfigureHook()
+  virtual bool configureHook()
   {
     state_posvel_.q.resize(gazebo_joints_.size());
     state_posvel_.qdot.resize(gazebo_joints_.size());
