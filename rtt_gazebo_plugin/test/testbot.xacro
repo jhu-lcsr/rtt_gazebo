@@ -1,0 +1,72 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro" name="sevenbot">
+
+  <!-- Gazebo Plugin -->
+  <gazebo>
+    <plugin name="rtt_gazebo" filename="librtt_gazebo_plugin.so">
+      <!--rttComponentPath>$(env LD_LIBRARY_PATH)</rttComponentPath-->
+    </plugin>
+  </gazebo>
+
+  <xacro:macro name="botlink" params="name">
+    <link name="${name}">
+      <inertial>
+        <origin xyz="0 0 0.5" rpy="0 0 0"/>
+        <mass value="0.1"/>
+        <inertia ixx="0.1"  ixy="0"  ixz="0" iyy="0.1" iyz="0" izz="0.1" />
+      </inertial>
+      <visual>
+        <origin xyz="0.5 0 0.5" rpy="0 0 0" />
+        <geometry>
+          <box size="1.0 0.2 0.2" />
+        </geometry>
+      </visual>
+    </link>
+  </xacro:macro>
+
+  <xacro:macro name="botjoint" params="name parent child">
+    <joint name="${name}" type="revolute">
+      <axis xyz="0 0 1"/>
+      <origin xyz="1 0 0" rpy="0 0 0"/>
+      <parent link="${parent}"/>
+      <child link="${child}"/>
+      <dynamics damping="0.01" friction="0.0"/>
+      <limit effort="100" velocity="100.0" lower="-1.57" upper="1.57" />
+    </joint>
+
+    <transmission name="trans_${name}">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${name}"/>
+      <actuator name="motor_${name}">
+        <hardwareInterface>EffortJointInterface</hardwareInterface>
+        <mechanicalReduction>1</mechanicalReduction>
+      </actuator>
+    </transmission>
+
+  </xacro:macro>
+
+  <link name="world"/>
+  <xacro:botlink name="base_link"/>
+  <xacro:botlink name="l1"/>
+  <xacro:botlink name="l2"/>
+  <xacro:botlink name="l3"/>
+  <xacro:botlink name="l4"/>
+  <xacro:botlink name="l5"/>
+  <xacro:botlink name="l6"/>
+  <xacro:botlink name="l7"/>
+
+  <joint name="base_joint" type="fixed">
+    <parent link="world"/>
+    <child link="base_link"/>
+  </joint>
+
+  <xacro:botjoint name="j1" parent="base_link" child="l1"/>
+  <xacro:botjoint name="j2" parent="l1" child="l2"/>
+  <xacro:botjoint name="j3" parent="l2" child="l3"/>
+  <xacro:botjoint name="j4" parent="l3" child="l4"/>
+  <xacro:botjoint name="j5" parent="l4" child="l5"/>
+  <xacro:botjoint name="j6" parent="l5" child="l6"/>
+  <xacro:botjoint name="j7" parent="l6" child="l7"/>
+
+
+</robot>

@@ -32,11 +32,12 @@ include_directories(include
 orocos_use_package( ocl-taskbrowser )
 orocos_use_package( ocl-deployment )
 orocos_use_package( ocl-logging )
+orocos_use_package( orocos-rtt-corba )
 
 ## Gazebo RTT plugin
 add_definitions(-DRTT_COMPONENT)
 add_library(${PROJECT_NAME} src/rtt_plugin.cpp)
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${SDFormat_LIBRARIES} orocos-kdl orocos-rtt-corba-${OROCOS_TARGET})
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${SDFormat_LIBRARIES} orocos-kdl)
 
 set(CMAKE_BUILD_TYPE Debug)
 
