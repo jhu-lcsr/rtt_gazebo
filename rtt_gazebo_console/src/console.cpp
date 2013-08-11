@@ -1,3 +1,5 @@
+#include <iostream>
+#include <rtt/deployment/ComponentLoader.hpp>
 #include <rtt/transports/corba/TaskContextServer.hpp>
 #include <rtt/transports/corba/TaskContextProxy.hpp>
 
@@ -9,6 +11,12 @@ using namespace RTT;
 
 int ORO_main(int argc, char** argv)
 {
+  std::string RTT_COMPONENT_PATH;
+
+  RTT_COMPONENT_PATH = std::string(getenv("RTT_COMPONENT_PATH"));
+  RTT::log(RTT::Error) << "RTT_COMPONENT_PATH: " << RTT_COMPONENT_PATH <<std::endl;
+
+  RTT::ComponentLoader::Instance()->setComponentPath(RTT_COMPONENT_PATH);
   // Setup Corba:
   TaskContextServer::InitOrb(argc, argv);
 

@@ -18,9 +18,10 @@ public:
   DefaultGazeboComponent(std::string const& name) : 
     GazeboComponent(name)
   {
-    this->provides("joint_state")->addPort("names", port_state_names);
-    this->provides("joint_state")->addPort("posvel", port_state_posvel);
-    this->provides("joint_state")->addPort("effort", port_state_effort);
+    this->ports()->addPort("test", port_test);
+    this->addPort("names", port_state_names);
+    this->addPort("posvel", port_state_posvel);
+    this->addPort("effort", port_state_effort);
 
     this->provides("joint_command")->addPort("position", port_cmd_position);
     this->provides("joint_command")->addPort("velocity", port_cmd_velocity);
@@ -40,6 +41,8 @@ public:
   {
     // Synchronize with update()
     RTT::os::MutexLock lock(gazebo_mutex_);
+
+    port_test.write(gazebo_joints_.size());
 
     // Write command
     KDL::JntArray cmd;
@@ -78,6 +81,8 @@ protected:
 
   KDL::JntArrayVel state_posvel_;
   KDL::JntArray state_effort_;
+
+  RTT::OutputPort<double> port_test;
 
   RTT::OutputPort<std::vector<std::string> > port_state_names;
   RTT::OutputPort<KDL::JntArrayVel> port_state_posvel;

@@ -49,7 +49,7 @@
 
 // Orocos
 #include <rtt/deployment/ComponentLoader.hpp>
-#include <ocl/DeploymentComponent.hpp>
+#include <ocl/CorbaDeploymentComponent.hpp>
 #include <ocl/TaskBrowser.hpp>
 #include <ocl/LoggingService.hpp>
 #include <rtt/Logger.hpp>
@@ -58,7 +58,6 @@
 #include <rtt/scripting/Scripting.hpp>
 #include <rtt/transports/corba/corba.h>
 #include <rtt/transports/corba/TaskContextServer.hpp>
-
 
 
 class RTTPlugin : public gazebo::ModelPlugin
@@ -87,9 +86,9 @@ private:
   std::string deployer_name_;
 
   // Orocos Structures
-  static boost::shared_ptr<OCL::DeploymentComponent> gazebo_deployer;
+  static boost::shared_ptr<OCL::CorbaDeploymentComponent> gazebo_deployer;
   static RTT::corba::TaskContextServer * taskcontext_server;
-  static std::map<std::string,boost::shared_ptr<OCL::DeploymentComponent> > deployers;
+  static std::map<std::string,boost::shared_ptr<OCL::CorbaDeploymentComponent> > deployers;
 
   RTT::TaskContext* gazebo_component_;
 
@@ -100,15 +99,23 @@ private:
 GZ_REGISTER_MODEL_PLUGIN(RTTPlugin);
 
 // Static imeplementations
-boost::shared_ptr<OCL::DeploymentComponent> RTTPlugin::gazebo_deployer;
+boost::shared_ptr<OCL::CorbaDeploymentComponent> RTTPlugin::gazebo_deployer;
 RTT::corba::TaskContextServer * RTTPlugin::taskcontext_server;
-std::map<std::string,boost::shared_ptr<OCL::DeploymentComponent> > RTTPlugin::deployers;
+std::map<std::string,boost::shared_ptr<OCL::CorbaDeploymentComponent> > RTTPlugin::deployers;
 
 
 RTTPlugin::~RTTPlugin()
 {
   // Disconnect from gazebo events
   gazebo::event::Events::DisconnectWorldUpdateBegin(update_connection_);
+
+  // Stop the Orb thread
+  if(!CORBA::is_nil(RTT::corba::TaskContextServer::orb)) {
+    RTT::corba::TaskContextServer::ShutdownOrb();
+    RTT::corba::TaskContextServer::DestroyOrb();
+    RTT::corba::TaskContextServer::CleanupServers();
+  }
+
 }
 
 // Overloaded Gazebo entry point
@@ -132,7 +139,7 @@ void RTTPlugin::Load(gazebo::physics::ModelPtr parent, sdf::ElementPtr sdf)
   // Create main gazebo deployer if necessary
   if(gazebo_deployer.get() == NULL) {
     // Create the gazebo deployer
-    gazebo_deployer =  boost::make_shared<OCL::DeploymentComponent>("gazebo");
+    gazebo_deployer =  boost::make_shared<OCL::CorbaDeploymentComponent>("gazebo");
 
     // Setup TaskContext server if necessary
     if(CORBA::is_nil(RTT::corba::TaskContextServer::orb)) {
@@ -157,7 +164,7 @@ void RTTPlugin::Load(gazebo::physics::ModelPtr parent, sdf::ElementPtr sdf)
 
   // Create component deployer if necessary
   if(deployers.find(deployer_name_) == deployers.end()) {
-    deployers[deployer_name_] = boost::make_shared<OCL::DeploymentComponent>(deployer_name_);
+    deployers[deployer_name_] = boost::make_shared<OCL::CorbaDeploymentComponent>(deployer_name_);
     deployers[deployer_name_]->connectPeers(gazebo_deployer.get());
   }
 
@@ -228,6 +235,8 @@ void RTTPlugin::loadThread()
     return;
   }
 
+  RTT::corba::TaskContextServer::Create( gazebo_component_ );
+
   // Set the component's gazebo model
   RTT::OperationCaller<bool(gazebo::physics::ModelPtr)> gazebo_set_model = 
     gazebo_component_->provides("gazebo")->getOperation("setModel");
@@ -252,9 +261,6 @@ void RTTPlugin::loadThread()
 // Called by the world update start event
 void RTTPlugin::Update()
 {
-  if(gazebo_component_ == NULL) {
-    return;
-  }
   // Get the simulation time
   gazebo::common::Time gz_time_now = parent_model_->GetWorld()->GetSimTime();
 
@@ -263,6 +269,10 @@ void RTTPlugin::Update()
   TimeService *rtt_time = TimeService::Instance();
   TimeService::Seconds dt = std::max(0.0,TimeService::Seconds((gz_time_now.sec*1E6 + gz_time_now.nsec) - rtt_time->getNSecs()));
   rtt_time->secondsChange(dt);
+
+  if(gazebo_component_ == NULL) {
+    return;
+  }
 
   // Call orocos gazebo component gazeboUpdate()
   gazebo_update_();

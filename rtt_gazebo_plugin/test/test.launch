@@ -25,7 +25,7 @@
   <!-- ros_control rrbot launch file -->
   <!--include file="$(find rrbot_control)/launch/rrbot_control.launch" /-->
   <!-- Launch the CORBA naming service -->
-  <node name="corba-naming-service" pkg="rtt_ros" type="corba-naming-service" args="-m 1"/>
+  <node name="corba_naming_service" pkg="rtt_ros" type="corba-naming-service" args="-m 1"/>
 
 </launch>
 
