@@ -6,11 +6,13 @@ project(rtt_gazebo_plugin)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS)
 
-# Depend on system install of Gazebo and SDFormat
+# Depend on system install of Gazebo 
 find_package(gazebo REQUIRED)
-find_package(SDF REQUIRED)
 find_package(OROCOS-RTT REQUIRED)
 include(${OROCOS-RTT_USE_FILE_PATH}/UseOROCOS-RTT.cmake )
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(TAO_PortableServer REQUIRED TAO_PortableServer)
+pkg_check_modules(TAO_CosNaming REQUIRED TAO_CosNaming)
 
 find_package(Orocos-KDL)
 include_directories(${Orocos-KDL_INCLUDE_DIRS})
@@ -26,7 +28,6 @@ include_directories(include
   ${Boost_INCLUDE_DIR}
   ${catkin_INCLUDE_DIRS}
   ${GAZEBO_INCLUDE_DIRS}
-  ${SDFormat_INCLUDE_DIRS}
   )
 
 orocos_use_package( ocl-taskbrowser )
@@ -39,7 +40,12 @@ orocos_use_package( rtt-typekit )
 ## Gazebo RTT plugin
 add_definitions(-DRTT_COMPONENT)
 add_library(${PROJECT_NAME} src/rtt_plugin.cpp)
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${SDFormat_LIBRARIES} orocos-kdl orocos-ocl-deployment-corba-${OROCOS_TARGET})
+target_link_libraries(${PROJECT_NAME}
+  #${TAO_PortableServer_LIBRARIES}
+  #${TAO_CosNaming_LIBRARIES}
+  ${catkin_LIBRARIES} 
+  orocos-kdl)
+
 
 set(CMAKE_BUILD_TYPE Debug)
 

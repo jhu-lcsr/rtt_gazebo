@@ -2,6 +2,8 @@
 #include <rtt/deployment/ComponentLoader.hpp>
 #include <rtt/transports/corba/TaskContextServer.hpp>
 #include <rtt/transports/corba/TaskContextProxy.hpp>
+#include <ocl/DeploymentComponent.hpp>
+#include <ocl/CorbaDeploymentComponent.hpp>
 
 #include <ocl/TaskBrowser.hpp>
 #include <rtt/os/main.h>
@@ -25,9 +27,12 @@ int ORO_main(int argc, char** argv)
 
   // Get a pointer to the component above
   TaskContext* component = TaskContextProxy::Create( "gazebo" );
+  OCL::DeploymentComponent cdc("console_deployer");
+  cdc.path(RTT_COMPONENT_PATH);
+  cdc.addPeer(component);
 
   // Interface it:
-  OCL::TaskBrowser browse( component );
+  OCL::TaskBrowser browse( &cdc );
   browse.loop();
 
   // Stop ORB thread:
