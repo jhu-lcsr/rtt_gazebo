@@ -7,9 +7,6 @@ catkin_package( DEPENDS rtt)
 find_package(OROCOS-RTT REQUIRED COMPONENTS rtt-scripting)
 
 include(${OROCOS-RTT_USE_FILE_PATH}/UseOROCOS-RTT.cmake )
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(TAO_PortableServer REQUIRED TAO_PortableServer)
-pkg_check_modules(TAO_CosNaming REQUIRED TAO_CosNaming)
 
 include_directories(
   ${Boost_INCLUDE_DIR}
