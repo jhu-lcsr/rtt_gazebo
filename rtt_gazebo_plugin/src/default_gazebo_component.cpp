@@ -18,10 +18,10 @@ public:
   DefaultGazeboComponent(std::string const& name) : 
     GazeboComponent(name)
   {
-    this->ports()->addPort("test", port_test);
-    this->addPort("names", port_state_names);
-    this->addPort("posvel", port_state_posvel);
-    this->addPort("effort", port_state_effort);
+    this->addPort("test", port_test);
+    this->provides("joint_state")->addPort("names", port_state_names);
+    this->provides("joint_state")->addPort("posvel", port_state_posvel);
+    this->provides("joint_state")->addPort("effort", port_state_effort);
 
     this->provides("joint_command")->addPort("position", port_cmd_position);
     this->provides("joint_command")->addPort("velocity", port_cmd_velocity);

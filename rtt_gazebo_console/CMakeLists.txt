@@ -4,7 +4,8 @@ project(rtt_gazebo_console)
 find_package(catkin REQUIRED)
 catkin_package( DEPENDS rtt)
 
-find_package(OROCOS-RTT REQUIRED)
+find_package(OROCOS-RTT REQUIRED COMPONENTS rtt-scripting)
+
 include(${OROCOS-RTT_USE_FILE_PATH}/UseOROCOS-RTT.cmake )
 find_package(PkgConfig REQUIRED)
 pkg_check_modules(TAO_PortableServer REQUIRED TAO_PortableServer)
@@ -24,9 +25,5 @@ orocos_use_package( rtt-typekit )
 
 add_definitions(-DRTT_STATIC)
 orocos_executable(console src/console.cpp)
-target_link_libraries(console )
-  #${TAO_PortableServer_LIBRARIES}
-  #${TAO_CosNaming_LIBRARIES})
-#target_link_libraries(console orocos-rtt-corba-${OROCOS_TARGET})
-#target_link_libraries(console ${OROCOS-RTT_RTT_CORBA_LIBRARIES})
+
 orocos_generate_package()

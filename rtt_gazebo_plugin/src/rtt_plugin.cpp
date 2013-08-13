@@ -55,6 +55,7 @@
 #include <rtt/Logger.hpp>
 
 
+#include <rtt/os/startstop.h>
 #include <rtt/scripting/Scripting.hpp>
 #include <rtt/transports/corba/corba.h>
 #include <rtt/transports/corba/TaskContextServer.hpp>
@@ -129,7 +130,7 @@ void RTTPlugin::Load(gazebo::physics::ModelPtr parent, sdf::ElementPtr sdf)
   std::string RTT_COMPONENT_PATH;
 
   RTT_COMPONENT_PATH = std::string(getenv("RTT_COMPONENT_PATH"));
-  //gzwarn << "RTT_COMPONENT_PATH: " << RTT_COMPONENT_PATH <<std::endl;
+  gzwarn << "RTT_COMPONENT_PATH: " << RTT_COMPONENT_PATH <<std::endl;
 
   RTT::ComponentLoader::Instance()->setComponentPath(RTT_COMPONENT_PATH);
 
@@ -138,18 +139,25 @@ void RTTPlugin::Load(gazebo::physics::ModelPtr parent, sdf::ElementPtr sdf)
 
   // Create main gazebo deployer if necessary
   if(gazebo_deployer.get() == NULL) {
+
+    int argc = 0;
+    char **argv = NULL;
+
+    __os_init(argc, argv);
+
     // Setup TaskContext server if necessary
     if(CORBA::is_nil(RTT::corba::TaskContextServer::orb)) {
       // Initialize orb
-      int argc = 0;
-      char **argv = NULL;
       RTT::corba::TaskContextServer::InitOrb(argc, argv);
       // Propcess orb requests in a thread
       RTT::corba::TaskContextServer::ThreadOrb();
     }
 
     // Create the gazebo deployer
-    gazebo_deployer =  boost::make_shared<OCL::DeploymentComponent>("gazebo");
+    gazebo_deployer = boost::make_shared<OCL::DeploymentComponent>("gazebo");
+
+    // Import the kdl typekit
+    gazebo_deployer->import("kdl_typekit");
 
     // Attach the taskcontext server to this component
     taskcontext_server = 
@@ -167,6 +175,7 @@ void RTTPlugin::Load(gazebo::physics::ModelPtr parent, sdf::ElementPtr sdf)
   if(deployers.find(deployer_name_) == deployers.end()) {
     deployers[deployer_name_] = boost::make_shared<OCL::DeploymentComponent>(deployer_name_);
     deployers[deployer_name_]->connectPeers(gazebo_deployer.get());
+    RTT::corba::TaskContextServer::Create( deployers[deployer_name_].get() );
   }
 
   deferred_load_thread_ = boost::thread(boost::bind(&RTTPlugin::loadThread, this));
