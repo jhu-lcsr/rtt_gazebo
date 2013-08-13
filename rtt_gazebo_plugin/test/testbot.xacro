@@ -4,7 +4,10 @@
   <!-- Gazebo Plugin -->
   <gazebo>
     <plugin name="rtt_gazebo" filename="librtt_gazebo_plugin.so">
-      <!--rttComponentPath>$(env LD_LIBRARY_PATH)</rttComponentPath-->
+      <opsScript>
+        import("rtt_ros");
+        ros.import("rtt_std_msgs");
+      </opsScript>
     </plugin>
   </gazebo>
 

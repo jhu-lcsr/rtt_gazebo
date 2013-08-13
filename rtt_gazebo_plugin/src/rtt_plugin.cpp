@@ -125,15 +125,12 @@ void RTTPlugin::Load(gazebo::physics::ModelPtr parent, sdf::ElementPtr sdf)
   sdf_ = sdf;
 
   // Set orocos environment variables
-  std::string RTT_COMPONENT_PATH;
+  //std::string RTT_COMPONENT_PATH;
 
-  RTT_COMPONENT_PATH = std::string(getenv("RTT_COMPONENT_PATH"));
-  gzwarn << "RTT_COMPONENT_PATH: " << RTT_COMPONENT_PATH <<std::endl;
+  //RTT_COMPONENT_PATH = std::string(getenv("RTT_COMPONENT_PATH"));
+  //gzwarn << "RTT_COMPONENT_PATH: " << RTT_COMPONENT_PATH <<std::endl;
 
-  RTT::ComponentLoader::Instance()->setComponentPath(RTT_COMPONENT_PATH);
-
-  // Disable the RTT system clock so Gazebo can manipulate time
-  RTT::os::TimeService::Instance()->enableSystemClock(false);
+  //RTT::ComponentLoader::Instance()->setComponentPath(RTT_COMPONENT_PATH);
 
   // Create main gazebo deployer if necessary
   if(deployers.find("gazebo") == deployers.end()) {
@@ -145,6 +142,9 @@ void RTTPlugin::Load(gazebo::physics::ModelPtr parent, sdf::ElementPtr sdf)
 
     // Initialize RTT
     __os_init(argc, argv);
+    
+    // Disable the RTT system clock so Gazebo can manipulate time
+    RTT::os::TimeService::Instance()->enableSystemClock(false);
 
     // Setup TaskContext server if necessary
     if(CORBA::is_nil(RTT::corba::TaskContextServer::orb)) {
@@ -272,13 +272,26 @@ void RTTPlugin::loadThread()
 // Called by the world update start event
 void RTTPlugin::Update()
 {
-  // Get the simulation time
-  gazebo::common::Time gz_time_now = parent_model_->GetWorld()->GetSimTime();
-
   // Update the RTT time to match the gazebo time
   using namespace RTT::os;
   TimeService *rtt_time = TimeService::Instance();
-  TimeService::Seconds dt = std::max(0.0,TimeService::Seconds((gz_time_now.sec*1E6 + gz_time_now.nsec) - rtt_time->getNSecs()));
+  TimeService::ticks rtt_ticks = rtt_time->getTicks();
+  TimeService::Seconds rtt_secs = TimeService::ticks2nsecs(rtt_ticks)*1E-9;
+
+  // Get the simulation time
+  gazebo::common::Time gz_time = parent_model_->GetWorld()->GetSimTime();
+  TimeService::Seconds gz_secs = (TimeService::Seconds)gz_time.sec + ((TimeService::Seconds)gz_time.nsec)*1E-9;
+
+  // Compute the time update
+  TimeService::Seconds dt = gz_secs-rtt_secs;
+
+  // Check if time went backwards
+  if(dt < 0) {
+    // Stop, configure, restart all components in this model's deployer
+    // TODO
+  }
+
+  // Update the RTT clock
   rtt_time->secondsChange(dt);
 
   if(gazebo_component_ == NULL) {

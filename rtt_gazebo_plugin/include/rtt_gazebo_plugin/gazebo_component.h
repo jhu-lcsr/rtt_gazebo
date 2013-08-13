@@ -21,6 +21,8 @@ namespace rtt_gazebo_plugin {
       this->provides("gazebo")->addOperation("setModel",&GazeboComponent::gazeboSetModel,this,RTT::ClientThread);
       this->provides("gazebo")->addOperation("getModel",&GazeboComponent::gazeboGetModel,this,RTT::ClientThread);
       this->provides("gazebo")->addOperation("update",&GazeboComponent::gazeboUpdate,this,RTT::ClientThread);
+      this->provides("gazebo")->provides("debug")->addProperty("time_rtt",rtt_time_);
+      this->provides("gazebo")->provides("debug")->addProperty("time_gz",gz_time_);
     }
 
     //! Set the Gazebo model
@@ -55,6 +57,11 @@ namespace rtt_gazebo_plugin {
     {
       // Synchronize with update()
       RTT::os::MutexLock lock(gazebo_mutex_);
+      rtt_time_ = 1E-9*RTT::os::TimeService::ticks2nsecs(RTT::os::TimeService::Instance()->getTicks());
+
+      gazebo::common::Time gz_time = model_->GetWorld()->GetSimTime();
+      gz_time_ = (double)gz_time.sec + ((double)gz_time.nsec)*1E-9;
+
       if(this->getTaskState() == RTT::TaskContext::Running) {
         this->gazeboUpdateHook();
       }
@@ -64,6 +71,9 @@ namespace rtt_gazebo_plugin {
     virtual void gazeboUpdateHook() = 0;
 
   protected:
+
+    double rtt_time_;
+    double gz_time_;
 
     //! Synchronization
     RTT::os::MutexRecursive gazebo_mutex_;
