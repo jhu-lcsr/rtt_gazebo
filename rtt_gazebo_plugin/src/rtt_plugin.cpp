@@ -116,8 +116,7 @@ public:
 
     // Check if time went backwards
     if(dt < 0) {
-      // Stop, configure, restart all components in this model's deployer
-      // TODO
+      gzwarn << "Time went backwards by "<<dt<<" seconds!" << std::endl;
     }
 
     // Update the RTT clock
@@ -170,6 +169,12 @@ class RTTPlugin : public gazebo::ModelPlugin
 {
 public:
 
+  /* \brief Constructor
+   * Gets an instance of \ref RTTSystem
+   */
+  RTTPlugin();
+
+  //! Destructor, disconnects update
   virtual ~RTTPlugin();
 
   // Overloaded Gazebo entry point
@@ -182,6 +187,10 @@ public:
   void gazeboUpdate();
 
 private:
+
+  // Shared pointer to the RTTSystem singleton
+  boost::shared_ptr<RTTSystem> rtt_system_;
+
   // deferred load in case something blocks
   boost::thread deferred_load_thread_;
 
@@ -208,6 +217,11 @@ GZ_REGISTER_MODEL_PLUGIN(RTTPlugin);
 RTT::corba::TaskContextServer * RTTPlugin::taskcontext_server;
 std::map<std::string,boost::shared_ptr<OCL::DeploymentComponent> > RTTPlugin::deployers;
 
+RTTPlugin::RTTPlugin() : 
+  gazebo::ModelPlugin(), 
+  rtt_system_(RTTSystem::Instance())
+{
+}
 
 RTTPlugin::~RTTPlugin()
 {
@@ -223,7 +237,7 @@ void RTTPlugin::Load(gazebo::physics::ModelPtr parent, sdf::ElementPtr sdf)
   sdf_ = sdf;
   
   // Initialize the time synchronizer
-  RTTSystem::Instance()->connectWorld(parent->GetWorld());
+  rtt_system_->connectWorld(parent->GetWorld());
 
   // Create main gazebo deployer if necessary
   if(deployers.find("gazebo") == deployers.end()) {
@@ -266,6 +280,7 @@ void RTTPlugin::loadThread()
     std::string ops_script_file;
     ops_script_file = sdf_->GetElement("opsScriptFile")->Get<std::string>();
     if(!deployers[deployer_name_]->runScript(ops_script_file)) {
+      gzerr << "Could not run ops script file "<<ops_script_file<<"!" << std::endl;
       return;
     }
   }
@@ -275,6 +290,7 @@ void RTTPlugin::loadThread()
     std::string ops_script;
     ops_script = sdf_->GetElement("opsScript")->Get<std::string>();
     if(!deployers[deployer_name_]->getProvider<RTT::Scripting>("scripting")->eval(ops_script)) {
+      gzerr << "Could not run inline ops script!" << std::endl;
       return;
     }
   }
@@ -282,15 +298,16 @@ void RTTPlugin::loadThread()
   // Initialize gazebo component
   model_component_ = NULL;
 
-  // Check if there is a special gazebo component
+  // Check if there is a special gazebo component that should be loaded
   if(sdf_->HasElement("component")) {
     // Get the component name
     std::string model_component_name = sdf_->GetElement("component")->Get<std::string>();
 
-    // Get the gazebo component from the deployer by name
+    // Get the model component from the deployer by name
     if(deployers[deployer_name_]->hasPeer(model_component_name)) {
       model_component_ = deployers[deployer_name_]->getPeer(model_component_name);
     } else {
+      gzerr << "SDF model plugin specified a special gazebo component to connect to the gazebo update, named \""<<model_component_name<<"\", but there is no peer by that name." <<std::endl;
       return;
     }
   } else {
@@ -307,31 +324,53 @@ void RTTPlugin::loadThread()
   }
 
   // Make sure the component has the required interfaces
-  if( model_component_ == NULL ||
-      !model_component_->provides()->hasService("gazebo") ||
-      !model_component_->provides("gazebo")->hasOperation("configure") ||
-      !model_component_->provides("gazebo")->hasOperation("update")) 
-  {
-    return;
-  }
-
-  // Create a CORBA server for this component (maybe not necessary)
-  RTT::corba::TaskContextServer::Create(model_component_);
+  if( model_component_ == NULL ) {
+    gzerr << "RTT model component was not properly created." << std::endl; return; }
+  if( !model_component_->provides()->hasService("gazebo") ) {
+    gzerr << "RTT model component does not have required \"gazebo\" service." << std::endl; return; }
+  if( !model_component_->provides("gazebo")->hasOperation("configure") ) {
+    gzerr << "RTT model component does not have required \"gazebo.configure\" operation." << std::endl; return; }
+  if( !model_component_->provides("gazebo")->hasOperation("update") ) {
+    gzerr << "RTT model component does not have required \"gazebo.update\" operation." << std::endl; return; }
 
   // Configure the component with the parent model
   RTT::OperationCaller<bool(gazebo::physics::ModelPtr)> gazebo_configure = model_component_->provides("gazebo")->getOperation("configure");
-  gazebo_configure(parent_model_);
+  // Make sure the operation is ready
+  if(gazebo_configure.ready()) {
+    if(!gazebo_configure(parent_model_)){
+      gzerr <<"RTT model component's \"gazebo.configure\" operation returned false." << std::endl;
+      return;
+    }
+  } else {
+    gzerr <<"RTT model component's \"gazebo.configure\" operation could not be connected. Check its signature." << std::endl;
+    return;
+  }
 
-  // Configure the gazebo component
+  // Configure the model component
   if(!model_component_->configure()) {
+    gzerr <<"Could not configure the RTT model component." << std::endl;
+    return;
+  }
+
+  // Start the model component
+  if(!model_component_->start()) {
+    gzerr <<"Could not start the RTT model component." << std::endl;
     return;
   }
 
   // Get gazebo update function
   gazebo_update_ = model_component_->provides("gazebo")->getOperation("update");
+  if(!gazebo_update_.ready()) {
+    gzerr <<"RTT model component's \"gazebo.update\" operation could not be connected. Check its signature." << std::endl;
+    return;
+  }
 
   // Listen to the update event. This event is broadcast every simulation iteration.
   update_connection_ = gazebo::event::Events::ConnectWorldUpdateBegin(boost::bind(&RTTPlugin::gazeboUpdate, this));
+
+  // Create a CORBA server for this component (maybe not necessary)
+  RTT::corba::TaskContextServer::Create(model_component_);
+
 }
 
 // Called by the world update start event
