@@ -367,10 +367,6 @@ void RTTPlugin::loadThread()
 
   // Listen to the update event. This event is broadcast every simulation iteration.
   update_connection_ = gazebo::event::Events::ConnectWorldUpdateBegin(boost::bind(&RTTPlugin::gazeboUpdate, this));
-
-  // Create a CORBA server for this component (maybe not necessary)
-  RTT::corba::TaskContextServer::Create(model_component_);
-
 }
 
 // Called by the world update start event

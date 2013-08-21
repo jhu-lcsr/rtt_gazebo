@@ -37,8 +37,10 @@ public:
   //! Called from gazebo
   virtual bool gazeboConfigureHook(gazebo::physics::ModelPtr model)
   {
+    if(model.get() == NULL) {return false;}
+
     // Get the joints
-    gazebo_joints_ = model_->GetJoints();
+    gazebo_joints_ = model->GetJoints();
 
     // Get the joint names
     for(std::vector<gazebo::physics::JointPtr>::iterator it=gazebo_joints_.begin();
@@ -54,12 +56,14 @@ public:
   //! Called from Gazebo
   virtual void gazeboUpdateHook(gazebo::physics::ModelPtr model) 
   {
+    if(model.get() == NULL) {return;}
+
     // Synchronize with update()
     RTT::os::MutexLock lock(gazebo_mutex_);
 
     // Get the RTT and gazebo time for debugging purposes
     rtt_time_ = 1E-9*RTT::os::TimeService::ticks2nsecs(RTT::os::TimeService::Instance()->getTicks());
-    gazebo::common::Time gz_time = model_->GetWorld()->GetSimTime();
+    gazebo::common::Time gz_time = model->GetWorld()->GetSimTime();
     gz_time_ = (double)gz_time.sec + ((double)gz_time.nsec)*1E-9;
 
     // Write command
@@ -92,10 +96,6 @@ public:
 
   virtual bool configureHook()
   {
-    if(model_.get() == NULL) {
-      return false;
-    }
-
     state_posvel_.q.resize(gazebo_joints_.size());
     state_posvel_.qdot.resize(gazebo_joints_.size());
     state_effort_.resize(gazebo_joints_.size());
@@ -114,7 +114,6 @@ protected:
   RTT::os::MutexRecursive gazebo_mutex_;
   
   //! The Gazebo Model
-  gazebo::physics::ModelPtr model_;
   //! The gazebo
   std::vector<gazebo::physics::JointPtr> gazebo_joints_;
   std::vector<std::string> joint_names_;
