@@ -60,6 +60,111 @@
 #include <rtt/transports/corba/corba.h>
 #include <rtt/transports/corba/TaskContextServer.hpp>
 
+class RTTSystem
+{
+public:
+  //! Get an instance of the singleton
+  static boost::shared_ptr<RTTSystem> Instance() 
+  {
+    // Cache the singleton with a weak pointer
+    static boost::weak_ptr<RTTSystem> instance;
+
+    // Create a new instance, if necessary
+    boost::shared_ptr<RTTSystem> shared = instance.lock();
+    if(instance.expired()) {
+      shared.reset(new RTTSystem());
+      instance = shared;
+    }
+    
+    return shared;
+  }
+
+  //! Set the world time source
+  void connectWorld(gazebo::physics::WorldPtr world) 
+  {
+    // Only set the world if it hasn't been set yet
+    if(world_.get() == NULL) {
+      // Store the world
+      world_ = world;
+      // Listen to the update event. This event is broadcast every simulation iteration.
+      update_connection_ = 
+        gazebo::event::Events::ConnectWorldUpdateBegin(
+            boost::bind(&RTTSystem::updateClock, this));
+    }
+  }
+
+  //! Update the RTT clock from the gazebo clock
+  void updateClock()
+  {
+    // Make sure the world isn't an illusion
+    if(world_.get() == NULL) {
+      return;
+    }
+
+    // Update the RTT time to match the gazebo time
+    using namespace RTT::os;
+    TimeService *rtt_time = TimeService::Instance();
+    TimeService::ticks rtt_ticks = rtt_time->getTicks();
+    TimeService::Seconds rtt_secs = TimeService::ticks2nsecs(rtt_ticks)*1E-9;
+
+    // Get the simulation time
+    gazebo::common::Time gz_time = world_->GetSimTime();
+    TimeService::Seconds gz_secs = (TimeService::Seconds)gz_time.sec + ((TimeService::Seconds)gz_time.nsec)*1E-9;
+
+    // Compute the time update
+    TimeService::Seconds dt = gz_secs-rtt_secs;
+
+    // Check if time went backwards
+    if(dt < 0) {
+      // Stop, configure, restart all components in this model's deployer
+      // TODO
+    }
+
+    // Update the RTT clock
+    rtt_time->secondsChange(dt);
+  }
+
+  ~RTTSystem() {
+    // Disconnect from gazebo events
+    gazebo::event::Events::DisconnectWorldUpdateBegin(update_connection_);
+
+    // Stop the Orb thread
+    if(!CORBA::is_nil(RTT::corba::TaskContextServer::orb)) {
+      RTT::corba::TaskContextServer::ShutdownOrb();
+      RTT::corba::TaskContextServer::DestroyOrb();
+      RTT::corba::TaskContextServer::CleanupServers();
+    }
+  }
+
+private:
+  // Singleton constraints
+  RTTSystem() {
+    // Args for init functions
+    // TODO: Get these from SDF
+    int argc = 0;
+    char **argv = NULL;
+
+    // Initialize RTT
+    __os_init(argc, argv);
+
+    // Disable the RTT system clock so Gazebo can manipulate time
+    RTT::os::TimeService::Instance()->enableSystemClock(false);
+
+    // Setup TaskContext server if necessary
+    if(CORBA::is_nil(RTT::corba::TaskContextServer::orb)) {
+      // Initialize orb
+      RTT::corba::TaskContextServer::InitOrb(argc, argv);
+      // Propcess orb requests in a thread
+      RTT::corba::TaskContextServer::ThreadOrb();
+    }
+  }
+  RTTSystem(RTTSystem const&);
+  void operator=(RTTSystem const&);
+
+  // Gazebo world to get time from
+  gazebo::physics::WorldPtr world_;
+  gazebo::event::ConnectionPtr update_connection_;
+};
 
 class RTTPlugin : public gazebo::ModelPlugin
 {
@@ -74,7 +179,7 @@ public:
   void loadThread();
 
   // Called by the world update start event
-  void Update();
+  void gazeboUpdate();
 
 private:
   // deferred load in case something blocks
@@ -90,9 +195,10 @@ private:
   static RTT::corba::TaskContextServer * taskcontext_server;
   static std::map<std::string,boost::shared_ptr<OCL::DeploymentComponent> > deployers;
 
-  RTT::TaskContext* gazebo_component_;
+  RTT::TaskContext* model_component_;
 
-  RTT::OperationCaller<void(void)> gazebo_update_;
+  // Operation for polling the
+  RTT::OperationCaller<void(gazebo::physics::ModelPtr)> gazebo_update_;
 };
 
 // Register this plugin with the simulator
@@ -107,14 +213,6 @@ RTTPlugin::~RTTPlugin()
 {
   // Disconnect from gazebo events
   gazebo::event::Events::DisconnectWorldUpdateBegin(update_connection_);
-
-  // Stop the Orb thread
-  if(!CORBA::is_nil(RTT::corba::TaskContextServer::orb)) {
-    RTT::corba::TaskContextServer::ShutdownOrb();
-    RTT::corba::TaskContextServer::DestroyOrb();
-    RTT::corba::TaskContextServer::CleanupServers();
-  }
-
 }
 
 // Overloaded Gazebo entry point
@@ -123,46 +221,18 @@ void RTTPlugin::Load(gazebo::physics::ModelPtr parent, sdf::ElementPtr sdf)
   // Save pointers to the model
   parent_model_ = parent;
   sdf_ = sdf;
-
-  // Set orocos environment variables
-  //std::string RTT_COMPONENT_PATH;
-
-  //RTT_COMPONENT_PATH = std::string(getenv("RTT_COMPONENT_PATH"));
-  //gzwarn << "RTT_COMPONENT_PATH: " << RTT_COMPONENT_PATH <<std::endl;
-
-  //RTT::ComponentLoader::Instance()->setComponentPath(RTT_COMPONENT_PATH);
+  
+  // Initialize the time synchronizer
+  RTTSystem::Instance()->connectWorld(parent->GetWorld());
 
   // Create main gazebo deployer if necessary
   if(deployers.find("gazebo") == deployers.end()) {
-
-    // Args for init functions
-    // TODO: Get these from SDF
-    int argc = 0;
-    char **argv = NULL;
-
-    // Initialize RTT
-    __os_init(argc, argv);
-    
-    // Disable the RTT system clock so Gazebo can manipulate time
-    RTT::os::TimeService::Instance()->enableSystemClock(false);
-
-    // Setup TaskContext server if necessary
-    if(CORBA::is_nil(RTT::corba::TaskContextServer::orb)) {
-      // Initialize orb
-      RTT::corba::TaskContextServer::InitOrb(argc, argv);
-      // Propcess orb requests in a thread
-      RTT::corba::TaskContextServer::ThreadOrb();
-    }
-
     // Create the gazebo deployer
     deployers["gazebo"] = boost::make_shared<OCL::DeploymentComponent>("gazebo");
-
-    // Import the kdl typekit
     deployers["gazebo"]->import("kdl_typekit");
 
     // Attach the taskcontext server to this component
-    taskcontext_server = 
-      RTT::corba::TaskContextServer::Create( deployers["gazebo"].get() );
+    taskcontext_server = RTT::corba::TaskContextServer::Create(deployers["gazebo"].get());
   }
 
   // Check if this deployer should have a custom name
@@ -176,9 +246,10 @@ void RTTPlugin::Load(gazebo::physics::ModelPtr parent, sdf::ElementPtr sdf)
   if(deployers.find(deployer_name_) == deployers.end()) {
     deployers[deployer_name_] = boost::make_shared<OCL::DeploymentComponent>(deployer_name_);
     deployers[deployer_name_]->connectPeers(deployers["gazebo"].get());
-    RTT::corba::TaskContextServer::Create( deployers[deployer_name_].get() );
+    RTT::corba::TaskContextServer::Create(deployers[deployer_name_].get());
   }
 
+  // Perform the rest of the asynchronous loading
   deferred_load_thread_ = boost::thread(boost::bind(&RTTPlugin::loadThread, this));
 }
 
@@ -209,16 +280,16 @@ void RTTPlugin::loadThread()
   }
 
   // Initialize gazebo component
-  gazebo_component_ = NULL;
+  model_component_ = NULL;
 
   // Check if there is a special gazebo component
   if(sdf_->HasElement("component")) {
     // Get the component name
-    std::string gazebo_component_name = sdf_->GetElement("component")->Get<std::string>();
+    std::string model_component_name = sdf_->GetElement("component")->Get<std::string>();
 
     // Get the gazebo component from the deployer by name
-    if(deployers[deployer_name_]->hasPeer(gazebo_component_name)) {
-      gazebo_component_ = deployers[deployer_name_]->getPeer(gazebo_component_name);
+    if(deployers[deployer_name_]->hasPeer(model_component_name)) {
+      model_component_ = deployers[deployer_name_]->getPeer(model_component_name);
     } else {
       return;
     }
@@ -230,74 +301,47 @@ void RTTPlugin::loadThread()
       gzerr << "Could not load rtt_gazebo_plugin: " << err.what() <<std::endl;
       return;
     }
-
     deployers[deployer_name_]->loadComponent(parent_model_->GetName(),"DefaultGazeboComponent");
     // Create a gazebo component with the same name as the model
-    gazebo_component_ = deployers[deployer_name_]->getPeer(parent_model_->GetName());
+    model_component_ = deployers[deployer_name_]->getPeer(parent_model_->GetName());
   }
 
   // Make sure the component has the required interfaces
-  if( gazebo_component_ == NULL ||
-      !gazebo_component_->provides()->hasService("gazebo") ||
-      !gazebo_component_->provides("gazebo")->hasOperation("setModel") ||
-      !gazebo_component_->provides("gazebo")->hasOperation("getModel") ||
-      !gazebo_component_->provides("gazebo")->hasOperation("update")) 
+  if( model_component_ == NULL ||
+      !model_component_->provides()->hasService("gazebo") ||
+      !model_component_->provides("gazebo")->hasOperation("configure") ||
+      !model_component_->provides("gazebo")->hasOperation("update")) 
   {
     return;
   }
 
-  RTT::corba::TaskContextServer::Create( gazebo_component_ );
+  // Create a CORBA server for this component (maybe not necessary)
+  RTT::corba::TaskContextServer::Create(model_component_);
 
-  // Set the component's gazebo model
-  RTT::OperationCaller<bool(gazebo::physics::ModelPtr)> gazebo_set_model = 
-    gazebo_component_->provides("gazebo")->getOperation("setModel");
-
-  gazebo_set_model(parent_model_);
-
-  // Get gazebo update function
-  gazebo_update_ = 
-    gazebo_component_->provides("gazebo")->getOperation("update");
+  // Configure the component with the parent model
+  RTT::OperationCaller<bool(gazebo::physics::ModelPtr)> gazebo_configure = model_component_->provides("gazebo")->getOperation("configure");
+  gazebo_configure(parent_model_);
 
   // Configure the gazebo component
-  if(!gazebo_component_->configure()) {
+  if(!model_component_->configure()) {
     return;
   }
 
-  // Listen to the update event. This event is broadcast every simulation iteration.
-  update_connection_ = 
-    gazebo::event::Events::ConnectWorldUpdateBegin(boost::bind(&RTTPlugin::Update, this));
+  // Get gazebo update function
+  gazebo_update_ = model_component_->provides("gazebo")->getOperation("update");
 
+  // Listen to the update event. This event is broadcast every simulation iteration.
+  update_connection_ = gazebo::event::Events::ConnectWorldUpdateBegin(boost::bind(&RTTPlugin::gazeboUpdate, this));
 }
 
 // Called by the world update start event
-void RTTPlugin::Update()
+void RTTPlugin::gazeboUpdate()
 {
-  // Update the RTT time to match the gazebo time
-  using namespace RTT::os;
-  TimeService *rtt_time = TimeService::Instance();
-  TimeService::ticks rtt_ticks = rtt_time->getTicks();
-  TimeService::Seconds rtt_secs = TimeService::ticks2nsecs(rtt_ticks)*1E-9;
-
-  // Get the simulation time
-  gazebo::common::Time gz_time = parent_model_->GetWorld()->GetSimTime();
-  TimeService::Seconds gz_secs = (TimeService::Seconds)gz_time.sec + ((TimeService::Seconds)gz_time.nsec)*1E-9;
-
-  // Compute the time update
-  TimeService::Seconds dt = gz_secs-rtt_secs;
-
-  // Check if time went backwards
-  if(dt < 0) {
-    // Stop, configure, restart all components in this model's deployer
-    // TODO
-  }
-
-  // Update the RTT clock
-  rtt_time->secondsChange(dt);
-
-  if(gazebo_component_ == NULL) {
+  // Make sure the gazebo component exists
+  if(model_component_ == NULL) {
     return;
   }
 
-  // Call orocos gazebo component gazeboUpdate()
-  gazebo_update_();
+  // Call orocos RTT model component gazebo.update()
+  gazebo_update_(parent_model_);
 }

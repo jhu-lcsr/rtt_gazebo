@@ -8,16 +8,20 @@
 
 #include <rtt/Component.hpp>
 #include <rtt/Port.hpp>
+#include <rtt/TaskContext.hpp>
+#include <rtt/Logger.hpp>
 
-#include <rtt_gazebo_plugin/gazebo_component.h>
-
-class DefaultGazeboComponent : public rtt_gazebo_plugin::GazeboComponent
+class DefaultGazeboComponent : public RTT::TaskContext
 {
 public:
 
   DefaultGazeboComponent(std::string const& name) : 
-    GazeboComponent(name)
+    RTT::TaskContext(name)
   {
+    // Add required gazebo interfaces
+    this->provides("gazebo")->addOperation("configure",&DefaultGazeboComponent::gazeboConfigureHook,this,RTT::ClientThread);
+    this->provides("gazebo")->addOperation("update",&DefaultGazeboComponent::gazeboUpdateHook,this,RTT::ClientThread);
+
     this->provides("joint_state")->addPort("names", port_state_names);
     this->provides("joint_state")->addPort("posvel", port_state_posvel);
     this->provides("joint_state")->addPort("effort", port_state_effort);
@@ -25,21 +29,38 @@ public:
     this->provides("joint_command")->addPort("position", port_cmd_position);
     this->provides("joint_command")->addPort("velocity", port_cmd_velocity);
     this->provides("joint_command")->addPort("effort", port_cmd_effort);
+
+    this->provides("debug")->addProperty("time_rtt",rtt_time_);
+    this->provides("debug")->addProperty("time_gz",gz_time_);
   }
 
-  virtual bool configureHook()
+  //! Called from gazebo
+  virtual bool gazeboConfigureHook(gazebo::physics::ModelPtr model)
   {
-    state_posvel_.q.resize(gazebo_joints_.size());
-    state_posvel_.qdot.resize(gazebo_joints_.size());
-    state_effort_.resize(gazebo_joints_.size());
+    // Get the joints
+    gazebo_joints_ = model_->GetJoints();
+
+    // Get the joint names
+    for(std::vector<gazebo::physics::JointPtr>::iterator it=gazebo_joints_.begin();
+        it != gazebo_joints_.end();
+        ++it)
+    {
+      joint_names_.push_back((**it).GetName());
+    }
+
     return true;
   }
 
   //! Called from Gazebo
-  virtual void gazeboUpdateHook() 
+  virtual void gazeboUpdateHook(gazebo::physics::ModelPtr model) 
   {
     // Synchronize with update()
     RTT::os::MutexLock lock(gazebo_mutex_);
+
+    // Get the RTT and gazebo time for debugging purposes
+    rtt_time_ = 1E-9*RTT::os::TimeService::ticks2nsecs(RTT::os::TimeService::Instance()->getTicks());
+    gazebo::common::Time gz_time = model_->GetWorld()->GetSimTime();
+    gz_time_ = (double)gz_time.sec + ((double)gz_time.nsec)*1E-9;
 
     // Write command
     KDL::JntArray cmd;
@@ -68,6 +89,19 @@ public:
     port_state_effort.write(state_effort_);
   }
 
+
+  virtual bool configureHook()
+  {
+    if(model_.get() == NULL) {
+      return false;
+    }
+
+    state_posvel_.q.resize(gazebo_joints_.size());
+    state_posvel_.qdot.resize(gazebo_joints_.size());
+    state_effort_.resize(gazebo_joints_.size());
+    return true;
+  }
+
   virtual void updateHook()
   {
     // Synchronize with gazeboUpdate()
@@ -75,6 +109,15 @@ public:
   }
 
 protected:
+
+  //! Synchronization
+  RTT::os::MutexRecursive gazebo_mutex_;
+  
+  //! The Gazebo Model
+  gazebo::physics::ModelPtr model_;
+  //! The gazebo
+  std::vector<gazebo::physics::JointPtr> gazebo_joints_;
+  std::vector<std::string> joint_names_;
 
   KDL::JntArrayVel state_posvel_;
   KDL::JntArray state_effort_;
@@ -86,6 +129,11 @@ protected:
   RTT::InputPort<KDL::JntArray> port_cmd_position;
   RTT::InputPort<KDL::JntArray> port_cmd_velocity;
   RTT::InputPort<KDL::JntArray> port_cmd_effort;
+
+  //! RTT time for debugging
+  double rtt_time_;
+  //! Gazebo time for debugging
+  double gz_time_;
 };
 
 ORO_LIST_COMPONENT_TYPE(DefaultGazeboComponent)
