@@ -70,6 +70,17 @@ Since systems in a simulated world are neither guaranteed nor likely to run in
 real-time, we override the normal RTT TimeService and update it at each Gazebo
 simulation step so that it remains synchronized with Gazebo's simulation clock.
 
+*However* without using a custom RTT Activity to run a component (i.e. running a
+component with the normal RTT::PeriodicActivity), that component will be
+scheduled based on the *wall time*. 
+
+Instead, components that are meant to run periodically and which should run in
+accordance with simulation time should be executed by a GazeboActivity, which
+still needs to be written. This GazeboActivity would be triggered by a Gazebo
+World Update Begin event, during which it would check its timers and execute its
+tasks appropriately based on their desired periods. Note that this requirement
+is different than the RTT::SimulationActivity, which runs as fast as possible. 
+
 ### CORBA-Based Console Interation
 
 The RTT Gazebo component also support CORBA-based remote task browsing. For more

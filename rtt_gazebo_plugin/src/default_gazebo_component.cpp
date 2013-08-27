@@ -40,8 +40,11 @@ public:
     this->provides("joint_command")->addPort("velocity", port_cmd_velocity);
     this->provides("joint_command")->addPort("effort", port_cmd_effort);
 
+    this->provides("debug")->addAttribute("time_wall",wall_time_);
     this->provides("debug")->addAttribute("time_rtt",rtt_time_);
     this->provides("debug")->addAttribute("time_gz",gz_time_);
+    this->provides("debug")->addAttribute("period_sim",period_sim_);
+    this->provides("debug")->addAttribute("period_wall",period_wall_);
     this->provides("debug")->addAttribute("steps_rtt",steps_rtt_);
     this->provides("debug")->addAttribute("steps_gz",steps_gz_);
     this->provides("debug")->addAttribute("n_joints",n_joints_);
@@ -95,6 +98,10 @@ public:
       gazebo::common::Time gz_time = model->GetWorld()->GetSimTime();
       gz_time_ = (double)gz_time.sec + ((double)gz_time.nsec)*1E-9;
 
+      // Get the wall time
+      gazebo::common::Time gz_wall_time = gazebo::common::Time::GetWallTime();
+      wall_time_ = (double)gz_wall_time.sec + ((double)gz_wall_time.nsec)*1E-9;
+
       // Get state
       for(unsigned j=0; j < gazebo_joints_.size(); j++) {
         state_pos_[j] = gazebo_joints_[j]->GetAngle(0).Radian();
@@ -132,6 +139,16 @@ public:
   {
     // Synchronize with gazeboUpdate()
     RTT::os::MutexLock lock(gazebo_mutex_);
+
+    // Compute period in simulation clock
+    static double last_update_time_sim;
+    period_sim_ = rtt_time_ - last_update_time_sim;
+    last_update_time_sim = rtt_time_;
+
+    // Compute period in wall clock
+    static double last_update_time_wall;
+    period_wall_ = wall_time_ - last_update_time_wall;
+    last_update_time_wall = wall_time_;
 
     // Increment simulation step counter (debugging)
     steps_rtt_++;
@@ -190,6 +207,7 @@ protected:
   double rtt_time_;
   //! Gazebo time for debugging
   double gz_time_;
+  double wall_time_;
 
   //! Control gains
   double kp_,kd_;
@@ -197,6 +215,9 @@ protected:
   int steps_gz_;
   int steps_rtt_;
   int n_joints_;
+
+  double period_sim_;
+  double period_wall_;
 
   CommandType command_type_;
 };
