@@ -120,6 +120,7 @@ public:
     }
 
     // Update the RTT clock
+    // TODO: Interpolate over a higher-resolution range?
     rtt_time->secondsChange(dt);
   }
 
@@ -250,8 +251,8 @@ void RTTPlugin::Load(gazebo::physics::ModelPtr parent, sdf::ElementPtr sdf)
   }
 
   // Check if this deployer should have a custom name
-  if(sdf_->HasElement("deployer")) {
-    deployer_name_ = sdf_->GetElement("deployer")->Get<std::string>();
+  if(sdf_->HasElement("isolated")) {
+    deployer_name_ = parent_model_->GetName()+std::string("__deployer__");
   } else {
     deployer_name_ = "gazebo"; 
   }
@@ -275,6 +276,22 @@ void RTTPlugin::loadThread()
     return;
   }
 
+  // Initialize gazebo component
+  model_component_ = NULL;
+
+  if(!sdf_->HasElement("component")) {
+    // Import the default component
+    try {
+      deployers[deployer_name_]->import("rtt_gazebo_plugin");
+    } catch(std::runtime_error &err) {
+      gzerr << "Could not load rtt_gazebo_plugin: " << err.what() <<std::endl;
+      return;
+    }
+    deployers[deployer_name_]->loadComponent(parent_model_->GetName(),"DefaultGazeboComponent");
+    // Create a gazebo component with the same name as the model
+    model_component_ = deployers[deployer_name_]->getPeer(parent_model_->GetName());
+  }
+
   // Get the orocos ops script
   if(sdf_->HasElement("opsScriptFile")) {
     std::string ops_script_file;
@@ -295,9 +312,6 @@ void RTTPlugin::loadThread()
     }
   }
 
-  // Initialize gazebo component
-  model_component_ = NULL;
-
   // Check if there is a special gazebo component that should be loaded
   if(sdf_->HasElement("component")) {
     // Get the component name
@@ -310,17 +324,6 @@ void RTTPlugin::loadThread()
       gzerr << "SDF model plugin specified a special gazebo component to connect to the gazebo update, named \""<<model_component_name<<"\", but there is no peer by that name." <<std::endl;
       return;
     }
-  } else {
-    // Import the default component
-    try {
-      deployers[deployer_name_]->import("rtt_gazebo_plugin");
-    } catch(std::runtime_error &err) {
-      gzerr << "Could not load rtt_gazebo_plugin: " << err.what() <<std::endl;
-      return;
-    }
-    deployers[deployer_name_]->loadComponent(parent_model_->GetName(),"DefaultGazeboComponent");
-    // Create a gazebo component with the same name as the model
-    model_component_ = deployers[deployer_name_]->getPeer(parent_model_->GetName());
   }
 
   // Make sure the component has the required interfaces
