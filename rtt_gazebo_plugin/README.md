@@ -153,7 +153,7 @@ cd gazebo
 cd sevenbot
 ```
 
-Then you can list some of the debug output:
+Then you can list some of the debug attributes:
 ```
 ls debug
 ```
@@ -162,17 +162,18 @@ This will display something simiar to:
 ```shell
  Listing Service debug[R] :
 
- Configuration Properties: 
-     double time_rtt       = 443.86               ()
-     double time_gz        = 443.861              ()
-        int steps_rtt      = 440125               ()
-        int steps_gz       = 440222               ()
-        int n_joints       = 8                    ()
-      array joint_pos      = { [2.78448e-06, 7.36207e-06, 6.21202e-06, 9.00524e-06, -4.93191e-06, -3.0927e-06, -7.66841e-06, -1.10073e-06 ], size = 8, capacity = 8 } ()
-      array joint_command  = { [-3.06293e-06, -8.09827e-06, -6.83323e-06, -9.90576e-06, 5.4251e-06, 3.40197e-06, 8.43525e-06, 1.2108e-06 ], size = 8, capacity = 8 } ()
+ Configuration Properties: (none)
 
  Provided Interface:
-  Attributes   : (none)
+  Attributes   : 
+     double time_rtt       = 6.938               
+     double time_gz        = 6.938               
+        int steps_rtt      = 6891                
+        int steps_gz       = 6771                
+        int n_joints       = 8                   
+      array joint_pos      = { [-2.78448e-06, 7.2723e-06, 6.19356e-06, -5.0639e-06, 3.9167e-06, -2.79475e-06, 1.73491e-06, 8.32204e-07 ], size = 8, capacity = 8 }
+      array joint_command  = { [3.06293e-06, 8.01095e-06, -6.80253e-06, 5.57588e-06, -4.30829e-06, 3.07115e-06, -1.90659e-06, -9.20536e-07 ], size = 8, capacity = 8 }
+
   Operations      : (none)
 
  Data Flow Ports: (none)

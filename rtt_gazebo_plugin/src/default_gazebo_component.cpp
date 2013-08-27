@@ -40,13 +40,13 @@ public:
     this->provides("joint_command")->addPort("velocity", port_cmd_velocity);
     this->provides("joint_command")->addPort("effort", port_cmd_effort);
 
-    this->provides("debug")->addProperty("time_rtt",rtt_time_);
-    this->provides("debug")->addProperty("time_gz",gz_time_);
-    this->provides("debug")->addProperty("steps_rtt",steps_rtt_);
-    this->provides("debug")->addProperty("steps_gz",steps_gz_);
-    this->provides("debug")->addProperty("n_joints",n_joints_);
-    this->provides("debug")->addProperty("joint_pos",state_pos_);
-    this->provides("debug")->addProperty("joint_command",command_);
+    this->provides("debug")->addAttribute("time_rtt",rtt_time_);
+    this->provides("debug")->addAttribute("time_gz",gz_time_);
+    this->provides("debug")->addAttribute("steps_rtt",steps_rtt_);
+    this->provides("debug")->addAttribute("steps_gz",steps_gz_);
+    this->provides("debug")->addAttribute("n_joints",n_joints_);
+    this->provides("debug")->addAttribute("joint_pos",state_pos_);
+    this->provides("debug")->addAttribute("joint_command",command_);
 
     this->addProperty("kp",kp_);
     this->addProperty("kd",kd_);
