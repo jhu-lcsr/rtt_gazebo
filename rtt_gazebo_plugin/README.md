@@ -13,6 +13,8 @@ control systems in Gazebo for use on real hardware. This means that the RTT
 components used with this plugin shuold be identical to the ones used on the
 real system. 
 
+### Gazebo RTT Component
+
 The standard procedure for simulation in component-based frameworks is for
 everything including and above the hardware abstraction layer to be the same,
 but with a different underlying implementation of the hardware response. In a
@@ -39,10 +41,22 @@ virtual bool gazeboConfigureHook(gazebo::physics::ModelPtr model);
 virtual void gazeboUpdateHook(gazebo::physics::ModelPtr model);
 ```
 
-For example implementations of these operations, see the [default gazebo
-component](src/default_gazebo_component.cpp).
+In order for these member functions to be called by the RTT Gazebo plugin, they
+need to be provided as operations:
 
-The plugin (either the default or a user-supplied one) is given the name of the
+```cpp
+this->provides("gazebo")->addOperation("configure",&DefaultGazeboComponent::gazeboConfigureHook,this,RTT::ClientThread);
+this->provides("gazebo")->addOperation("update",&DefaultGazeboComponent::gazeboUpdateHook,this,RTT::ClientThread);
+```
+
+For example implementations of these operations, see the [default gazebo
+component](src/default_gazebo_component.cpp). In the future, these operations
+will be automatically created by an RTT Service which can be loaded on any
+TaskContext.
+
+### Gazebo Deployer
+
+The RTT component (either the default or a user-supplied one) is named after the
 Gazebo model whem it is loaded into an Orocos OCL DeploymentComponent. By
 default, all models are loaded into the same DeploymentComponent, called
 "gazebo", but they can specify that they need to be isolated, in which case they
@@ -50,11 +64,17 @@ are loaded in an alternative DeploymentComponent named
 "MODEL\_NAME\_\_deployer\_\_". This allows components associated with different
 models to either be isolated or interact with each-other.
  
-## Time
+### Time
 
 Since systems in a simulated world are neither guaranteed nor likely to run in
 real-time, we override the normal RTT TimeService and update it at each Gazebo
 simulation step so that it remains synchronized with Gazebo's simulation clock.
+
+### CORBA-Based Console Interation
+
+The RTT Gazebo component also support CORBA-based remote task browsing. For more
+informationa about connecting a task browser to a set of orocos components
+running inside of Gazebo, see [rtt\_gazebo\_console](../rtt_gazebo_console).
 
 ## Usage
 
@@ -90,8 +110,4 @@ is given in-line in the XML file:
 </gazebo>
 ```
 
-## CORBA-Based Console Interation
 
-The RTT Gazebo component also support CORBA-based remote task browsing. For more
-informationa about connecting a task browser to a set of orocos components
-running inside of Gazebo, see [rtt\_gazebo\_console](../rtt_gazebo_console).
