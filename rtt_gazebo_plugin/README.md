@@ -132,14 +132,57 @@ Then, in another shell, you can launch the rtt\_gazebo\_console:
 rosrun rtt_gazebo_console console-$OROCOS_TARGET
 ```
 
+This will display something similar to this:
+```shell
+   Switched to : console_deployer
+
+  This console reader allows you to browse and manipulate TaskContexts.
+  You can type in an operation, expression, create or change variables.
+  (type 'help' for instructions and 'ls' for context info)
+
+    TAB completion and HISTORY is available ('bash' like)
+
+    Use 'Ctrl-D' or type 'quit' to exit this program.
+
+console_deployer [S]> 
+```
+
 Once you've loaded up the console, you can `cd` into the demo component:
 ```shell
 cd gazebo
 cd sevenbot
 ```
 
-Then you can list some of the debug output, or change the naiive PD gains on the
-default component:
+Then you can list some of the debug output:
 ```
-print debug
+ls debug
+```
+
+This will display something simiar to:
+```shell
+ Listing Service debug[R] :
+
+ Configuration Properties: 
+     double time_rtt       = 443.86               ()
+     double time_gz        = 443.861              ()
+        int steps_rtt      = 440125               ()
+        int steps_gz       = 440222               ()
+        int n_joints       = 8                    ()
+      array joint_pos      = { [2.78448e-06, 7.36207e-06, 6.21202e-06, 9.00524e-06, -4.93191e-06, -3.0927e-06, -7.66841e-06, -1.10073e-06 ], size = 8, capacity = 8 } ()
+      array joint_command  = { [-3.06293e-06, -8.09827e-06, -6.83323e-06, -9.90576e-06, 5.4251e-06, 3.40197e-06, 8.43525e-06, 1.2108e-06 ], size = 8, capacity = 8 } ()
+
+ Provided Interface:
+  Attributes   : (none)
+  Operations      : (none)
+
+ Data Flow Ports: (none)
+
+ Services: 
+(none)
+```
+
+You can also change the gains of the joint-level PD effort control:
+```
+kp = 0.5
+kd = 10
 ```
