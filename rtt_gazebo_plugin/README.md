@@ -70,7 +70,7 @@ Since systems in a simulated world are neither guaranteed nor likely to run in
 real-time, we override the normal RTT TimeService and update it at each Gazebo
 simulation step so that it remains synchronized with Gazebo's simulation clock.
 
-*However* without using a custom RTT Activity to run a component (i.e. running a
+*However*, without using a custom RTT Activity to run a component (i.e. running a
 component with the normal RTT::PeriodicActivity), that component will be
 scheduled based on the *wall time*. 
 
