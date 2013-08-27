@@ -265,7 +265,8 @@ void RTTPlugin::Load(gazebo::physics::ModelPtr parent, sdf::ElementPtr sdf)
   }
 
   // Perform the rest of the asynchronous loading
-  deferred_load_thread_ = boost::thread(boost::bind(&RTTPlugin::loadThread, this));
+  //deferred_load_thread_ = boost::thread(boost::bind(&RTTPlugin::loadThread, this));
+  this->loadThread();
 }
 
 // Load in seperate thread from Gazebo in case something blocks

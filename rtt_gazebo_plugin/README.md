@@ -83,7 +83,8 @@ URDF.
 
 The following tags are supported:
 * `<opsScript>...</opsScript>` In-line Oroocs Ops script to be executed when the
-  plugin is loaded.
+  plugin is loaded. ***NOTE: only `/* ... */` comments can be used because
+  Gazebo removes all line breaks from parsed XML!*** 
 * `<opsScriptFile>/path/to/file.ops</opsScriptFile>` The path to an Orocos Ops
   script file to be executed when the plugin is loaded.
 * `<isolated/>` Load the RTT components in a DeploymentComponent specific to
@@ -98,11 +99,15 @@ DefaultGazeboComponent with the same name as the mode in an isolated
 DeploymentComponent, and then execute some Orocos Ops script, which in this case
 is given in-line in the XML file:
 
+***NOTE: only `/* ... */` comments can be used because Gazebo removes all line
+breaks from parsed XML!***
+
 ```xml
 <gazebo>
   <plugin name="rtt_gazebo" filename="librtt_gazebo_plugin.so">
     <isolated/>
     <opsScript>
+      /* A comment! */
       import("rtt_ros");
       ros.import("rtt_std_msgs");
     </opsScript>
@@ -110,4 +115,29 @@ is given in-line in the XML file:
 </gazebo>
 ```
 
+## Demo
 
+This package also includes a simple demonstration of the plugin which also uses
+ROS for launching gazebo.
+
+First, launch gazebo with the demo model:
+```shell
+roslaunch rtt_gazebo_plugin test.launch
+```
+
+Then, in another shell, you can launch the rtt\_gazebo\_console:
+```shell
+rosrun rtt_gazebo_console console-$OROCOS_TARGET
+```
+
+Once you've loaded up the console, you can `cd` into the demo component:
+```shell
+cd gazebo
+cd sevenbot
+```
+
+Then you can list some of the debug output, or change the naiive PD gains on the
+default component:
+```
+print debug
+```

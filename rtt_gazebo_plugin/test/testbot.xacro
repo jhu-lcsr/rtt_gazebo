@@ -7,6 +7,9 @@
       <opsScript>
         import("rtt_ros");
         ros.import("rtt_std_msgs");
+        
+        /* a comment */
+        setPeriodicActivity("sevenbot",0.001,HighestPriority,ORO_SCHED_OTHER);
       </opsScript>
     </plugin>
   </gazebo>
