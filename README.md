@@ -2,8 +2,8 @@ Orocos-RTT / Gazebo Integration
 ===============================
 
 This repository contains tools for prototyping robot control systems designed
-with the [Orocos Toolchain](orocos.org) in the [Gazebo
-Simulator](gazebosim.org).
+with the [Orocos Toolchain](http://orocos.org) in the [Gazebo
+Simulator](http://gazebosim.org).
 
 ***NOTE:*** *The Orocos Toolchain packages (RTT amd OCL) need to be built
 with the following CMake arguments to enable use of the remote console:*
