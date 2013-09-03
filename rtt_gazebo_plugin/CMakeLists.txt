@@ -11,7 +11,7 @@ include(${OROCOS-RTT_USE_FILE_PATH}/UseOROCOS-RTT.cmake )
 find_package(Orocos-KDL REQUIRED)
 
 catkin_package(
-  INCLUDE_DIRS include
+  #INCLUDE_DIRS include
   DEPENDS rtt gazebo
   )
 
