@@ -11,6 +11,13 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
+  <build_depend>rtt</build_depend>
+  <build_depend>ocl</build_depend>
+  <build_depend>ocl-deployment</build_depend>
+  <build_depend>ocl-taskbrowser</build_depend>
+  <build_depend>ocl-logging</build_depend>
+  <build_depend>orocos-rtt-corba</build_depend>
+
   <export>
   </export>
 </package>

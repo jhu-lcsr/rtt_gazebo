@@ -4,7 +4,9 @@ project(rtt_gazebo_console)
 find_package(catkin REQUIRED)
 catkin_package( DEPENDS rtt)
 
-find_package(OROCOS-RTT REQUIRED COMPONENTS rtt-scripting rtt-transport-corba)
+find_package(OROCOS-RTT REQUIRED COMPONENTS 
+  rtt-scripting 
+  rtt-transport-corba)
 
 include(${OROCOS-RTT_USE_FILE_PATH}/UseOROCOS-RTT.cmake )
 
@@ -17,8 +19,6 @@ orocos_use_package( ocl-taskbrowser )
 orocos_use_package( ocl-deployment )
 orocos_use_package( ocl-logging )
 orocos_use_package( orocos-rtt-corba )
-orocos_use_package( rtt-transport-corba )
-orocos_use_package( rtt-typekit )
 
 add_definitions(-DRTT_STATIC)
 orocos_executable(console src/console.cpp)
