@@ -22,5 +22,6 @@ orocos_use_package( orocos-rtt-corba )
 
 add_definitions(-DRTT_STATIC)
 orocos_executable(console src/console.cpp)
+target_link_libraries(console ${USE_OROCOS_LIBRARIES})
 
 orocos_generate_package()

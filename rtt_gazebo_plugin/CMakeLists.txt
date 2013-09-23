@@ -30,9 +30,7 @@ orocos_use_package( ocl-taskbrowser )
 orocos_use_package( ocl-deployment )
 orocos_use_package( ocl-logging )
 orocos_use_package( orocos-rtt-corba )
-orocos_use_package( rtt-transport-corba )
 orocos_use_package( rtt-typekit )
-orocos_use_package( rtt-scripting )
 
 ## Gazebo RTT plugin
 add_library(${PROJECT_NAME} src/rtt_plugin.cpp)
