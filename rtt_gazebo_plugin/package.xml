@@ -9,6 +9,12 @@
   <license>BSD</license>
   <buildtool_depend>catkin</buildtool_depend>
 
+  <build_depend>rtt</build_depend>
+  <build_depend>ocl</build_depend>
+  <build_depend>ocl-deployment</build_depend>
+  <build_depend>gazebo</build_depend>
+
+  <run_depend>gazebo</run_depend>
   <run_depend>gazebo_ros</run_depend>
 
   <export>
