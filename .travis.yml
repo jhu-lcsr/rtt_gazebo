@@ -28,7 +28,7 @@ before_install:
   - ln -s $CI_SOURCE_PATH
   - popd
   # Install deps
-  - rosdep install --from-paths ~/ws/src ~/ws_isolated/src --ignore-src --rosdistro $ROS_DISTRO -y > /dev/null
+  - rosdep install -r --from-paths ~/ws/src ~/ws_isolated/src --ignore-src --rosdistro $ROS_DISTRO -y > /dev/null
 install:
   # Build in an isolated catkin workspace
   - pushd ~/ws_isolated
