@@ -36,7 +36,7 @@ install:
   - source install_isolated/setup.bash
   
   - pushd ~/ws
-  - catkin_make
+  - catkin_make -j1
   - source devel/setup.bash
 script:
   # Run tests
