@@ -32,11 +32,11 @@ before_install:
 install:
   # Build in an isolated catkin workspace
   - pushd ~/ws_isolated
-  - catkin_make_isolated --install -j1 --cmake-args $EXTRA_CMAKE_ARGS
+  - catkin_make_isolated --install -j2 --cmake-args $EXTRA_CMAKE_ARGS
   - source install_isolated/setup.bash
   
   - pushd ~/ws
-  - catkin_make -j1
+  - catkin_make -j2
   - source devel/setup.bash
 script:
   # Run tests
