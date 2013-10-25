@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(rtt_gazebo_plugin)
 
 ## Find catkin macros and libraries
-find_package(catkin REQUIRED)
+find_package(catkin REQUIRED COMPONENTS rtt_gazebo_activity)
 
 # Depend on system install of Gazebo 
 find_package(gazebo REQUIRED)
