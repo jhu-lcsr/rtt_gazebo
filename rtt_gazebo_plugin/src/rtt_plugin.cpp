@@ -60,6 +60,9 @@
 #include <rtt/transports/corba/corba.h>
 #include <rtt/transports/corba/TaskContextServer.hpp>
 
+// RTT Gazebo Activity
+#include <rtt_gazebo_activity/gazebo_activity.hpp>
+
 class RTTSystem
 {
 public:
@@ -122,6 +125,13 @@ public:
     // Update the RTT clock
     // TODO: Interpolate over a higher-resolution range?
     rtt_time->secondsChange(dt);
+
+    // Update GazeboActivities
+    boost::shared_ptr<rtt_gazebo_activity::GazeboActivityManager> manager = rtt_gazebo_activity::GazeboActivityManager::GetInstance();
+    if (manager) {
+      manager->setSimulationPeriod(world_->GetPhysicsEngine()->GetMaxStepSize());
+      manager->update();
+    }
   }
 
   ~RTTSystem() {
