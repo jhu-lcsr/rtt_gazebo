@@ -108,7 +108,7 @@ public:
     using namespace RTT::os;
     TimeService *rtt_time = TimeService::Instance();
     TimeService::ticks rtt_ticks = rtt_time->getTicks();
-    TimeService::Seconds rtt_secs = TimeService::ticks2nsecs(rtt_ticks)*1E-9;
+    TimeService::Seconds rtt_secs = RTT::nsecs_to_Seconds(TimeService::ticks2nsecs(rtt_ticks));
 
     // Get the simulation time
     gazebo::common::Time gz_time = world_->GetSimTime();

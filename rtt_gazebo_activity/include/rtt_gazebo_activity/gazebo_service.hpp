@@ -34,3 +34,48 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  *********************************************************************/
 
+#ifndef RTT_GAZEBO_ACTIVITY_CLOCK_SERVICE_HPP
+#define RTT_GAZEBO_ACTIVITY_CLOCK_SERVICE_HPP
+
+#include <rtt/Service.hpp>
+#include <rtt/os/Thread.hpp>
+#include <rtt/os/TimeService.hpp>
+
+#include <ros/subscriber.h>
+#include <ros/callback_queue.h>
+
+#include <rosgraph_msgs/Clock.h>
+
+namespace rtt_gazebo_activity {
+
+class GazeboService : public RTT::Service, public RTT::os::Thread
+{
+public:
+    GazeboService(const std::string& name, RTT::TaskContext* owner = 0);
+    virtual ~GazeboService();
+
+    virtual void updateClock(RTT::os::TimeService::Seconds clock_secs);
+    virtual RTT::os::ThreadInterface* thread();
+
+    virtual bool setGazeboActivity(RTT::TaskContext *t = 0);
+
+protected:
+    virtual void clockCallback(const rosgraph_msgs::ClockConstPtr& clock);
+
+    virtual void loop();
+    virtual bool breakLoop();
+    virtual bool initialize();
+    virtual void finalize();
+
+private:
+    RTT::os::TimeService *mtime_service;
+
+    ros::Subscriber msubscriber;
+    ros::CallbackQueue mcallback_queue;
+
+    bool mbreak_loop;
+};
+
+} // namespace rtt_gazebo_activity
+
+#endif // RTT_GAZEBO_ACTIVITY_CLOCK_SERVICE_HPP
