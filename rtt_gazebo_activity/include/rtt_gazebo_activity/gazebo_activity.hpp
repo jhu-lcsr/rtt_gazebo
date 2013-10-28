@@ -107,7 +107,6 @@ public:
     virtual bool trigger();
 
     virtual RTT::os::TimeService::ticks getLastExecutionTicks() const;
-    virtual void setLastExecutionTicks(RTT::os::TimeService::ticks ticks);
 
 private:
     std::string mname;

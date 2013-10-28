@@ -56,7 +56,7 @@ boost::shared_ptr<GazeboActivityManager> GazeboActivityManager::GetInstance()
 boost::shared_ptr<GazeboActivityManager> GazeboActivityManager::Instance()
 {
     // Create a new instance, if necessary
-    boost::shared_ptr<GazeboActivityManager> shared = sinstance.lock();
+    boost::shared_ptr<GazeboActivityManager> shared = GetInstance();
     if(sinstance.expired()) {
         shared.reset(new GazeboActivityManager());
         sinstance = shared;
@@ -87,10 +87,9 @@ void GazeboActivityManager::update()
     for(std::list<GazeboActivity *>::const_iterator it = mactivities.begin(); it != mactivities.end(); it++)
     {
         GazeboActivity *activity = *it;
-        if (RTT::os::TimeService::ticks2nsecs(now - activity->getLastExecutionTicks()) * 1e9 >= activity->getPeriod())
+        if (RTT::os::TimeService::ticks2nsecs(now - activity->getLastExecutionTicks()) * 1e-9 >= activity->getPeriod())
         {
-            if (activity->execute())
-                activity->setLastExecutionTicks(now);
+            activity->execute();
         }
     }
 }
@@ -193,6 +192,7 @@ bool GazeboActivity::start()
     }
 
     mactive = true;
+    mlast = 0;
 
     if ( runner ? runner->initialize() : this->initialize() ) {
         mrunning = true;
@@ -241,17 +241,13 @@ bool GazeboActivity::execute()
 {
     if (!mrunning) return false;
     if (runner) runner->step(); else this->step();
+    mlast = RTT::os::TimeService::Instance()->getTicks();
     return true;
 }
 
 RTT::os::TimeService::ticks GazeboActivity::getLastExecutionTicks() const
 {
     return mlast;
-}
-
-void GazeboActivity::setLastExecutionTicks(RTT::os::TimeService::ticks ticks)
-{
-    mlast = ticks;
 }
 
 } // namespace rtt_gazebo_activity

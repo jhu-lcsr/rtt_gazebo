@@ -33,8 +33,8 @@ orocos_library(rtt_gazebo_activity src/gazebo_activity.cpp)
 target_link_libraries(rtt_gazebo_activity ${USE_OROCOS_LIBRARIES})
 
 orocos_use_package(rtt_rosgraph_msgs)
-orocos_plugin(rtt_clock_service src/clock_service.cpp)
-target_link_libraries(rtt_clock_service ${USE_OROCOS_LIBRARIES})
+orocos_plugin(rtt_gazebo_service src/gazebo_service.cpp)
+target_link_libraries(rtt_gazebo_service rtt_gazebo_activity ${USE_OROCOS_LIBRARIES})
 
 #############
 ## Install ##
