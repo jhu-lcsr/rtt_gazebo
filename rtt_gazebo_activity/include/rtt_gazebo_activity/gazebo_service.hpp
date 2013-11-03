@@ -59,6 +59,8 @@ public:
 
     virtual bool setGazeboActivity(RTT::TaskContext *t = 0);
 
+    using RTT::Service::getName;
+
 protected:
     virtual void clockCallback(const rosgraph_msgs::ClockConstPtr& clock);
 
