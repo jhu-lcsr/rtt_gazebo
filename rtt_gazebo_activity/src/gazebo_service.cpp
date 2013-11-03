@@ -38,11 +38,16 @@
 #include <rtt_gazebo_activity/gazebo_activity.hpp>
 
 #include <rtt/TaskContext.hpp>
+#include <rtt/internal/GlobalService.hpp>
+#include <rtt/plugin/Plugin.hpp>
 
 #include <ros/node_handle.h>
+#include <ros/param.h>
 #include <ros/subscribe_options.h>
 
 namespace rtt_gazebo_activity {
+
+static bool s_use_sim_time = false;
 
 GazeboService::GazeboService(const std::string& name, RTT::TaskContext* owner)
     : RTT::Service(name, owner)
@@ -51,6 +56,8 @@ GazeboService::GazeboService(const std::string& name, RTT::TaskContext* owner)
 {
     this->addOperation("start", &GazeboService::start, this);
     this->addOperation("stop", &GazeboService::stop, this);
+    this->addOperation("isRunning", &GazeboService::isRunning, this);
+    this->addOperation("isActive", &GazeboService::isActive, this);
 
     this->addOperation("setGazeboActivity", &GazeboService::setGazeboActivity, this);
     setGazeboActivity();
@@ -118,29 +125,48 @@ bool GazeboService::breakLoop()
 
 bool GazeboService::initialize()
 {
+    RTT::Logger::In in(getName());
+
+    // check if this service has an owner. If yes, start the global service thread instead.
     if (getOwner()) {
-        RTT::log(RTT::Error) << "The gazebo service thread can only be started in the global gazebo service." << RTT::endlog();
+        RTT::log(RTT::Warning) << "The gazebo service thread can only be started in the global gazebo service. Starting global thread instead..." << RTT::endlog();
+        boost::shared_ptr<GazeboService> global_gazebo_service = boost::dynamic_pointer_cast<GazeboService>(RTT::internal::GlobalService::Instance()->provides("gazebo"));
+        if (global_gazebo_service) global_gazebo_service->start();
         return false;
     }
 
-    // Disable the RTT system clock so Gazebo can manipulate time
-    mtime_service->enableSystemClock(false);
+    // Get /use_sim_time parameter
+    s_use_sim_time = false;
+    ros::param::get("/use_sim_time", s_use_sim_time);
 
-    // Subscribe the /clock topic (simulation time, e.g. published by Gazebo)
-    ros::NodeHandle nh;
-    ros::SubscribeOptions ops = ros::SubscribeOptions::create<rosgraph_msgs::Clock>(
-                "/clock", 1, boost::bind(&GazeboService::clockCallback, this, _1),
-                ros::VoidConstPtr(), &mcallback_queue);
-    msubscriber = nh.subscribe(ops);
+    // Disable system clock and subscribe to /clock if use_sim_time is true
+    if (s_use_sim_time) {
+        // Disable the RTT system clock so Gazebo can manipulate time
+        mtime_service->enableSystemClock(false);
 
-    RTT::log(RTT::Info) << "Using gazebo time on topic " << msubscriber.getTopic() << "." << RTT::endlog();
-    mbreak_loop = false;
+        // Subscribe the /clock topic (simulation time, e.g. published by Gazebo)
+        ros::NodeHandle nh;
+        ros::SubscribeOptions ops = ros::SubscribeOptions::create<rosgraph_msgs::Clock>(
+                    "/clock", 1, boost::bind(&GazeboService::clockCallback, this, _1),
+                    ros::VoidConstPtr(), &mcallback_queue);
+        msubscriber = nh.subscribe(ops);
+
+        RTT::log(RTT::Info) << "Using gazebo time on topic " << msubscriber.getTopic() << "." << RTT::endlog();
+        mbreak_loop = false;
+
+    // ...otherwise exit loop immediately
+    } else {
+        mbreak_loop = true;
+    }
+
     return true;
 }
 
 void GazeboService::finalize()
 {
-    msubscriber = ros::Subscriber();
+    if (msubscriber) {
+        msubscriber = ros::Subscriber();
+    }
 }
 
 bool GazeboService::setGazeboActivity(RTT::TaskContext *t)
@@ -151,10 +177,6 @@ bool GazeboService::setGazeboActivity(RTT::TaskContext *t)
 }
 
 } // namespace rtt_gazebo_activity
-
-
-#include <rtt/plugin/Plugin.hpp>
-#include <rtt/internal/GlobalService.hpp>
 
 /**
  * Instructs this plugin to load itself into the process or a component.
