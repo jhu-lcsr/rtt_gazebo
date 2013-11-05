@@ -37,12 +37,13 @@ add_library(${PROJECT_NAME} src/rtt_plugin.cpp)
 set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS -DRTT_STATIC)
 target_link_libraries(${PROJECT_NAME}
   ${GAZEBO_LIBRARIES}
-  ${catkin_LIBRARIES} 
-  ${OROCOS-RTT_LIBRARIES}
+  ${catkin_LIBRARIES}
+  ${OROCOS-RTT_LIBRARIES} ${OROCOS-RTT_RTT-SCRIPTING_LIBRARY} ${OROCOS-RTT_RTT-TRANSPORT-CORBA_LIBRARY}
+  ${USE_OROCOS_LIBRARIES}
   boost_thread
   orocos-kdl)
 
-set(CMAKE_BUILD_TYPE Debug)
+#set(CMAKE_BUILD_TYPE Debug)
 
 ## Default component
 orocos_component(default_gazebo_component src/default_gazebo_component.cpp)
