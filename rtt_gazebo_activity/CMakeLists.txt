@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(rtt_gazebo_activity)
 
 ## Find catkin macros and libraries
-find_package(catkin REQUIRED)
+find_package(catkin REQUIRED COMPONENTS roscpp)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -21,20 +21,24 @@ include(${OROCOS-RTT_USE_FILE_PATH}/UseOROCOS-RTT.cmake )
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
+  CATKIN_DEPENDS roscpp
 )
 
 ###########
 ## Build ##
 ###########
 
-include_directories(include)
+include_directories(
+  include
+  ${catkin_INCLUDE_DIRS}
+)
 
 orocos_library(rtt_gazebo_activity src/gazebo_activity.cpp)
 target_link_libraries(rtt_gazebo_activity ${USE_OROCOS_LIBRARIES})
 
 orocos_use_package(rtt_rosgraph_msgs)
 orocos_plugin(rtt_gazebo_service src/gazebo_service.cpp)
-target_link_libraries(rtt_gazebo_service rtt_gazebo_activity ${USE_OROCOS_LIBRARIES})
+target_link_libraries(rtt_gazebo_service rtt_gazebo_activity ${catkin_LIBRARIES} ${USE_OROCOS_LIBRARIES})
 
 #############
 ## Install ##
