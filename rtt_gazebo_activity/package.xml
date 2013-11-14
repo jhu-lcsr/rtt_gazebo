@@ -10,8 +10,10 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <build_depend>rtt</build_depend>
+  <build_depend>roscpp</build_depend>
   <build_depend>boost</build_depend>
 
   <run_depend>rtt</run_depend>
+  <run_depend>roscpp</run_depend>
 
 </package>
