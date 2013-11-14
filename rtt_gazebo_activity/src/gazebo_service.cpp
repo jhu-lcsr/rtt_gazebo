@@ -141,8 +141,25 @@ bool GazeboService::initialize()
 
     // Disable system clock and subscribe to /clock if use_sim_time is true
     if (s_use_sim_time) {
-        // Disable the RTT system clock so Gazebo can manipulate time
+        RTT::log(RTT::Info) << "Switching to simulated time..." << RTT::endlog();
+
+        // We have to set the Logger reference time to zero in order to get correct logging timestamps.
+        // RTT::Logger::Instance()->setReferenceTime(0);
+        //
+        // Unfortunately this method is not available, therefore shutdown and restart logging.
+        // This workaround is not exact.
+
+        // Shutdown the RTT Logger
+        RTT::Logger::Instance()->shutdown();
+
+        // Disable the RTT system clock so Gazebo can manipulate time and reset it to 0
         mtime_service->enableSystemClock(false);
+        mtime_service->secondsChange(-mtime_service->secondsSince(0));
+        // assert(mtime_service->getTicks() == 0);
+
+        // Restart the RTT Logger with reference time 0
+        RTT::Logger::Instance()->startup();
+        // assert(RTT::Logger::Instance()->getReferenceTime() == 0)
 
         // Subscribe the /clock topic (simulation time, e.g. published by Gazebo)
         ros::NodeHandle nh;
@@ -164,9 +181,7 @@ bool GazeboService::initialize()
 
 void GazeboService::finalize()
 {
-    if (msubscriber) {
-        msubscriber = ros::Subscriber();
-    }
+    msubscriber.shutdown();
 }
 
 bool GazeboService::setGazeboActivity(RTT::TaskContext *t)
