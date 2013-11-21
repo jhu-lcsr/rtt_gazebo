@@ -8,7 +8,7 @@ find_package(catkin REQUIRED)
 find_package(gazebo REQUIRED)
 find_package(OROCOS-RTT REQUIRED COMPONENTS rtt-scripting rtt-transport-corba)
 include(${OROCOS-RTT_USE_FILE_PATH}/UseOROCOS-RTT.cmake )
-find_package(Orocos-KDL REQUIRED)
+find_package(orocos_kdl REQUIRED)
 
 catkin_package(
   #INCLUDE_DIRS include
@@ -17,13 +17,13 @@ catkin_package(
 
 link_directories(
   ${GAZEBO_LIBRARY_DIRS}
-  ${Orocos-KDL_LIBRARY_DIRS} 
+  ${orocos_kdl_LIBRARY_DIRS}
   )
 include_directories(include
   ${Boost_INCLUDE_DIR}
   ${catkin_INCLUDE_DIRS}
   ${GAZEBO_INCLUDE_DIRS}
-  ${Orocos-KDL_INCLUDE_DIRS}
+  ${orocos_kdl_INCLUDE_DIRS}
   )
 
 orocos_use_package( ocl-taskbrowser )
@@ -48,6 +48,6 @@ target_link_libraries(${PROJECT_NAME}
 ## Default component
 orocos_component(default_gazebo_component src/default_gazebo_component.cpp)
 set_target_properties(default_gazebo_component PROPERTIES COMPILE_FLAGS -DRTT_COMPONENT)
-target_link_libraries(default_gazebo_component orocos-kdl ${GAZEBO_LIBRARIES})
+target_link_libraries(default_gazebo_component ${catkin_LIBRARIES} ${orocos_kdl_LIBRARIES} ${GAZEBO_LIBRARIES})
 
 orocos_generate_package()
