@@ -2,13 +2,13 @@ cmake_minimum_required(VERSION 2.8.3)
 project(rtt_gazebo_plugin)
 
 ## Find catkin macros and libraries
-find_package(catkin REQUIRED)
+find_package(catkin REQUIRED COMPONENTS rtt_gazebo_activity)
 
 # Depend on system install of Gazebo 
 find_package(gazebo REQUIRED)
 find_package(OROCOS-RTT REQUIRED COMPONENTS rtt-scripting rtt-transport-corba)
 include(${OROCOS-RTT_USE_FILE_PATH}/UseOROCOS-RTT.cmake )
-find_package(Orocos_KDL REQUIRED)
+find_package(Orocos-KDL REQUIRED)
 find_package(Eigen REQUIRED)
 find_package(Boost COMPONENTS thread REQUIRED)
 
@@ -17,11 +17,18 @@ catkin_package(
   DEPENDS rtt gazebo eigen
   )
 
+link_directories(
+  ${GAZEBO_LIBRARY_DIRS}
+  ${Orocos-KDL_LIBRARY_DIRS}
+  )
+
+message(STATUS "kdl dirs: ${Orocos-KDL_INCLUDE_DIRS}")
+
 include_directories(include
   ${Boost_INCLUDE_DIR}
   ${catkin_INCLUDE_DIRS}
   ${GAZEBO_INCLUDE_DIRS}
-  ${orocos_kdl_INCLUDE_DIRS}
+  ${Orocos-KDL_INCLUDE_DIRS}
   ${Eigen_INCLUDE_DIR}
   )
 
@@ -42,7 +49,7 @@ target_link_libraries(${PROJECT_NAME}
   ${OROCOS-RTT_RTT-TRANSPORT-CORBA_LIBRARY}
   ${USE_OROCOS_LIBRARIES}
   ${Boost_LIBRARIES}
-  ${orocos_kdl_LIBRARIES}
+  ${Orocos-KDL_LIBRARIES}
 )
 
 #set(CMAKE_BUILD_TYPE Debug)
@@ -50,6 +57,6 @@ target_link_libraries(${PROJECT_NAME}
 ## Default component
 orocos_component(default_gazebo_component src/default_gazebo_component.cpp)
 set_target_properties(default_gazebo_component PROPERTIES COMPILE_FLAGS -DRTT_COMPONENT)
-target_link_libraries(default_gazebo_component ${orocos_kdl_LIBRARIES} ${GAZEBO_LIBRARIES})
+target_link_libraries(default_gazebo_component ${catkin_LIBRARIES} ${Orocos-KDL_LIBRARIES} ${GAZEBO_LIBRARIES})
 
 orocos_generate_package()
