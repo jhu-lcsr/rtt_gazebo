@@ -148,6 +148,7 @@ bool GazeboService::initialize()
         //
         // Unfortunately this method is not available, therefore shutdown and restart logging.
         // This workaround is not exact.
+        // TODO: See if there's a way to make this cleaner
 
         // Shutdown the RTT Logger
         RTT::Logger::Instance()->shutdown();
