@@ -26,6 +26,7 @@ before_install:
   - mkdir -p ~/ws/src
   - pushd ~/ws/src
   - ln -s $CI_SOURCE_PATH
+  - git clone --recursive https://www.github.com/jhu-lcsr-forks/rtt_ros_integration.git
   - popd
   # Install deps
   - rosdep install -r --from-paths ~/ws/src ~/ws_isolated/src --ignore-src --rosdistro $ROS_DISTRO -y > /dev/null
