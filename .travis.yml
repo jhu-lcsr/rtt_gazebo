@@ -13,19 +13,20 @@ before_install:
   - export CI_SOURCE_PATH=$(pwd)
   - export EXTRA_CMAKE_ARGS="-DENABLE_CORBA=ON -DCORBA_IMPLEMENTATION=OMNIORB"
   # Bootstrap a minimal ROS installation
-  - git clone https://raw.github.com/jhu-lcsr/ros_ci_tools /tmp/ros_ci_tools && export PATH=/tmp/ros_ci_tools:$PATH
+  - git clone https://github.com/jhu-lcsr/ros_ci_tools /tmp/ros_ci_tools && export PATH=/tmp/ros_ci_tools:$PATH
   - ros_ci_bootstrap
   - source /opt/ros/$ROS_DISTRO/setup.bash
   # Create isolated workspace based on the ros distro
   - mkdir -p ~/ws_isolated/src
   - pushd ~/ws_isolated/src
-  - git clone --recursive https://www.github.com/jhu-lcsr-forks/orocos_toolchain.git
+  #- git clone --recursive https://www.github.com/jhu-lcsr-forks/orocos_toolchain.git
   - git clone --recursive https://www.github.com/jhu-lcsr-forks/orocos_kinematics_dynamics.git
   - popd
   # Create non-isolated workspace
   - mkdir -p ~/ws/src
   - pushd ~/ws/src
   - ln -s $CI_SOURCE_PATH
+  - git clone --recursive https://www.github.com/jhu-lcsr-forks/rtt_ros_integration.git
   - popd
   # Install deps
   - rosdep install -r --from-paths ~/ws/src ~/ws_isolated/src --ignore-src --rosdistro $ROS_DISTRO -y > /dev/null

@@ -1,0 +1,16 @@
+<package>
+  <name>rtt_gazebo</name>
+  <maintainer email="jbo@jhu.edu">Jonathan Bohren</maintainer>
+  <description>Run RTT components synchronized with Gazebo world updates.</description>
+  <version>0.0.0</version>
+  <license>BSD</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <run_depend>rtt_gazebo_plugin</run_depend>
+  <run_depend>rtt_gazebo_console</run_depend>
+
+  <export>
+    <metapackage/>
+  </export>
+
+</package>
