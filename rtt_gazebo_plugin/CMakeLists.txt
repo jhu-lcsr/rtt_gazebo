@@ -39,6 +39,7 @@ target_link_libraries(${PROJECT_NAME}
   ${GAZEBO_LIBRARIES}
   ${catkin_LIBRARIES} 
   ${OROCOS-RTT_LIBRARIES}
+  ${USE_OROCOS_LIBRARIES}
   boost_thread
   orocos-kdl)
 
