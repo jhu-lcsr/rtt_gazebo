@@ -10,7 +10,7 @@ find_package(catkin REQUIRED COMPONENTS roscpp)
 find_package(OROCOS-RTT REQUIRED)
 include(${OROCOS-RTT_USE_FILE_PATH}/UseOROCOS-RTT.cmake )
 
-find_package(Orocos-KDL REQUIRED)
+find_package(orocos_kdl REQUIRED)
 
 ###################################
 ## catkin specific configuration ##
@@ -33,7 +33,7 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
-  ${Orocos-KDL_INCLUDE_DIRS}
+  ${orocos_kdl_INCLUDE_DIRS}
 )
 
 orocos_library(rtt_gazebo_activity src/gazebo_activity.cpp)
