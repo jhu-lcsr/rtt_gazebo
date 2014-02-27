@@ -14,7 +14,7 @@ the following CMake arguments to enable use of the remote console:*
 
 ## Packages
 
-* [rtt\_gazebo\_plugin](rtt_gazebo_plugin) A *Gazebo* plugin for running an RTT
+* [rtt\_gazebo\_plugin](rtt_gazebo_deployer) A *Gazebo* plugin for running an RTT
   deployment component inside a Gazebo process.
 * [rtt\_gazebo\_activity](rtt_gazebo_activity) An *Orocos RTT* plugin for
   executing RTT components based on Gazebo's simulation time whether they are

@@ -293,9 +293,9 @@ void RTTPlugin::loadThread()
   if(!sdf_->HasElement("component")) {
     // Import the default component
     try {
-      deployers[deployer_name_]->import("rtt_gazebo_plugin");
+      deployers[deployer_name_]->import("rtt_gazebo_deployer");
     } catch(std::runtime_error &err) {
-      gzerr << "Could not load rtt_gazebo_plugin: " << err.what() <<std::endl;
+      gzerr << "Could not load rtt_gazebo_deployer: " << err.what() <<std::endl;
       return;
     }
     deployers[deployer_name_]->loadComponent(parent_model_->GetName(),"DefaultGazeboComponent");

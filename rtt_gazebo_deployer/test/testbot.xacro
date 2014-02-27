@@ -3,7 +3,7 @@
 
   <!-- Gazebo Plugin -->
   <gazebo>
-    <plugin name="rtt_gazebo" filename="librtt_gazebo_plugin.so">
+    <plugin name="rtt_gazebo" filename="librtt_gazebo_deployer.so">
       <opsScript>
         import("rtt_ros");
         ros.import("rtt_std_msgs");

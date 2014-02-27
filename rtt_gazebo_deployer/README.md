@@ -117,7 +117,7 @@ run!***
 
 ```xml
 <gazebo>
-  <plugin name="rtt_gazebo" filename="librtt_gazebo_plugin.so">
+  <plugin name="rtt_gazebo" filename="librtt_gazebo_deployer.so">
     <isolated/>
     <opsScript>
       /* A comment! */
@@ -135,7 +135,7 @@ ROS for launching gazebo.
 
 First, launch gazebo with the demo model:
 ```shell
-roslaunch rtt_gazebo_plugin test.launch
+roslaunch rtt_gazebo_deployer test.launch
 ```
 
 Then, in another shell, you can launch the rtt\_gazebo\_console:
