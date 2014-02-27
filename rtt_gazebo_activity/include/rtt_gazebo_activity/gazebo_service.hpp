@@ -48,6 +48,9 @@
 
 namespace rtt_gazebo_activity {
 
+/** 
+ * The GazeboService (Service and Thread) is a global service
+ */
 class GazeboService : public RTT::Service, public RTT::os::Thread
 {
 public:

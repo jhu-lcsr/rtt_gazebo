@@ -48,6 +48,14 @@ namespace rtt_gazebo_activity {
 
 class GazeboActivity;
 
+/**
+ * \brief A centralized list of all TaskContexts using GazeboActivity
+ *
+ * The GazeboActivityManager is used to synchronously update all TaskContexts
+ * using a GazeboActivity. This is the primary interface to executing a set of
+ * periodic tasks in simulation. 
+ *
+ */
 class GazeboActivityManager
 {
 public:
@@ -61,6 +69,7 @@ public:
     RTT::Seconds getSimulationPeriod() const;
     void setSimulationPeriod(RTT::Seconds s);
 
+    //! Execute all activities modulo their desired periods
     void update();
 
 private:
