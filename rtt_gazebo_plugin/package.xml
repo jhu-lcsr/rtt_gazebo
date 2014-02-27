@@ -12,12 +12,10 @@
   <build_depend>rtt</build_depend>
   <build_depend>ocl</build_depend>
   <build_depend>gazebo</build_depend>
-  <build_depend>orocos_kdl</build_depend>
   <build_depend>rtt_gazebo_activity</build_depend>
 
   <run_depend>gazebo</run_depend>
   <run_depend>gazebo_ros</run_depend>
-  <run_depend>orocos_kdl</run_depend>
   <run_depend>rtt_gazebo_activity</run_depend>
 
   <export>
