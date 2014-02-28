@@ -108,10 +108,10 @@ DefaultGazeboComponent with the same name as the mode in an isolated
 DeploymentComponent, and then execute some Orocos Ops script, which in this case
 is given in-line in the XML file:
 
-***NOTE: only "/* ... \*/" comments can be used because Gazebo removes all line
+**NOTE:** only `/* ... */` comments can be used because Gazebo removes all line
 breaks from parsed XML! Single-line comments starting with `//` or `#` will
 comment out the rest of the script in the `<opsScript>` block, and it will not
-run!***
+run!
 
 ```xml
 <gazebo>
