@@ -23,7 +23,7 @@
 
   <!-- start gazebo server-->
   <node name="gazebo" pkg="gazebo_ros" type="$(arg script_type)" respawn="false" output="screen"
-	args="$(arg command_arg1) $(arg command_arg2) $(arg world_name) -s librtt_gazebo_world.so" />
+	args="$(arg command_arg1) $(arg command_arg2) $(arg world_name) -s librtt_gazebo_system.so" />
 	
   <!-- start gazebo client -->
   <group if="$(arg gui)">
