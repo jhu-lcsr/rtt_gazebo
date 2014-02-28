@@ -1,10 +1,9 @@
-RTT Gazebo Plugin
-=================
+RTT Gazebo Deployer
+===================
 
-This package provides a plugin for the Gazebo simulator which enables the
+This package provides a model plugin for the Gazebo simulator which enables the
 construction and execution of Orocos RTT components inside the Gazebo process so
-that they can have API-level access to Gazebo. 
-
+that they can have synchronous API-level access to Gazebo. 
 
 ## Design
 
@@ -109,7 +108,7 @@ DefaultGazeboComponent with the same name as the mode in an isolated
 DeploymentComponent, and then execute some Orocos Ops script, which in this case
 is given in-line in the XML file:
 
-***NOTE: only `/* ... */` comments can be used because Gazebo removes all line
+***NOTE: only "/* ... */" comments can be used because Gazebo removes all line
 breaks from parsed XML! Single-line comments starting with `//` or `#` will
 comment out the rest of the script in the `<opsScript>` block, and it will not
 run!***
