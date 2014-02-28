@@ -3,10 +3,11 @@
   <!-- roslaunch arguments -->
   <arg name="debug" default="false"/>
   <arg name="gui" default="true"/>
+  <arg name="TAO" default="false"/>
 
   <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
-  <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <!--arg name="world_name" value="$(find rrbot_gazebo)/worlds/rrbot.world"/-->
+  <include file="$(find rtt_gazebo_examples)/test/empty_world.launch">
+    <!--<arg name="world_name" value="$(find rtt_gazebo_world)/worlds/rtt_gazebo.world"/>-->
     <arg name="debug" value="$(arg debug)" />
     <arg name="gui" value="$(arg gui)" />
     <arg name="paused" value="false"/>
@@ -16,16 +17,14 @@
 
   <!-- Load the URDF into the ROS Parameter Server -->
   <param name="robot_description"
-	 command="$(find xacro)/xacro.py '$(find rtt_gazebo_plugin)/test/testbot.xacro'" />
+	 command="$(find xacro)/xacro.py '$(find rtt_gazebo_examples)/test/testbot.xacro'" />
 
   <!-- Call a python script to the run a service call to gazebo_ros to spawn a URDF robot -->
   <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
 	args="-urdf -model sevenbot -param robot_description"/>
 
-  <!-- ros_control rrbot launch file -->
-  <!--include file="$(find rrbot_control)/launch/rrbot_control.launch" /-->
-  <!-- Launch the CORBA naming service -->
-  <node name="corba_naming_service" pkg="rtt_ros" type="corba-naming-service" args="-m 1"/>
+  <!-- Launch the CORBA TO naming service -->
+  <node if="$(arg TAO)" name="corba_naming_service" pkg="rtt_ros" type="corba-naming-service" args="-m 1"/>
 
 </launch>
 
