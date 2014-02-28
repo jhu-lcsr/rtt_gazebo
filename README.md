@@ -19,6 +19,10 @@ the following CMake arguments to enable use of the remote console
 
 ## Packages
 
+* [rtt\_gazebo\_system](rtt_gazebo_system) A Gazebo `SystemPlugin` for
+  initializing RTT in-process and overriding the `RTT::os::TimeService` with
+  the Gazebo clock, as well as triggering any
+  `rtt_rosclock::SimClockActivity`-bound RTT components.
 * [rtt\_gazebo\_deployer](rtt_gazebo_deployer) A Gazebo `ModelPlugin` for
   running an RTT deployment component associated with a given Robot Model. This
   deployment component can then be used to load other RTT components. This will
@@ -26,8 +30,8 @@ the following CMake arguments to enable use of the remote console
 * [rtt\_gazebo\_console](rtt_gazebo_console) A CORBA-based console for
   connecting to an Orocos TaskBrowswer running in the Gazebo Simulator (via
   `rtt_gazebo_deployer`).
-* [rtt\_gazebo\_examples](rtt_gazebo_examples) Example RTT components which can
-  interact with Gazebo.
+* [rtt\_gazebo\_examples](rtt_gazebo_examples) Example ROS launchfiles, Gazebo
+  worlds, and RTT components which can interact with Gazebo.
 
 See the README.md files in each package for more details.
 

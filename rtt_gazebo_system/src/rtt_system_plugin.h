@@ -26,7 +26,7 @@
 
 #include <rtt_rosclock/rtt_rosclock.h>
 
-namespace rtt_gazebo_world {
+namespace rtt_gazebo_system {
 
   class RTTSystemPlugin : public gazebo::SystemPlugin
   {

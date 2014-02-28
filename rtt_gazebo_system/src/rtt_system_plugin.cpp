@@ -27,7 +27,7 @@
 
 #include "rtt_system_plugin.h"
 
-using namespace rtt_gazebo_world;
+using namespace rtt_gazebo_system;
 
 void RTTSystemPlugin::Load(int argc, char **argv)
 {
@@ -73,4 +73,4 @@ void RTTSystemPlugin::updateClock()
   rtt_rosclock::update_sim_clock(ros::Time(gz_time.sec, gz_time.nsec));
 }
 
-GZ_REGISTER_SYSTEM_PLUGIN(rtt_gazebo_world::RTTSystemPlugin)
+GZ_REGISTER_SYSTEM_PLUGIN(rtt_gazebo_system::RTTSystemPlugin)
