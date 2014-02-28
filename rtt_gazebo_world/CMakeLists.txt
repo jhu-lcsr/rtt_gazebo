@@ -50,6 +50,6 @@ target_link_libraries(${PROJECT_NAME}
   ${orocos_kdl_LIBRARIES}
 )
 
-#set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_BUILD_TYPE Debug)
 
 orocos_generate_package()

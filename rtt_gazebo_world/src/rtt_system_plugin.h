@@ -28,16 +28,14 @@
 
 namespace rtt_gazebo_world {
 
-  class RTTSystemPlugin : public gazebo::WorldPlugin
+  class RTTSystemPlugin : public gazebo::SystemPlugin
   {
   public:
-    //! Initialize RTT (__os_init), rtt_rosclock sim clock, and CORBA
-    RTTSystemPlugin();
     //! Disconnect the world event and cleanup CORBA
-    ~RTTSystemPlugin();
+    virtual ~RTTSystemPlugin();
 
-    //! Set the gazebo world (as a time/trigger source)
-    void connectWorld(gazebo::physics::WorldPtr world);
+    void Load(int argc, char **argv);
+    void Init();
 
     /**
      * \brief Update the RTT clock from the gazebo clock
@@ -48,15 +46,8 @@ namespace rtt_gazebo_world {
      */
     void updateClock();
 
-    void Load(gazebo::physics::WorldPtr world, sdf::ElementPtr sdf);
-
+    void Update() { }
   private:
-
-    void initialize();
-
-    //! Gazebo world to get time from
-    gazebo::physics::WorldPtr world_;
-
     //! Event connection to the world update
     gazebo::event::ConnectionPtr update_connection_;
   };

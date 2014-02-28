@@ -29,19 +29,8 @@
 
 using namespace rtt_gazebo_world;
 
-GZ_REGISTER_WORLD_PLUGIN(rtt_gazebo_world::RTTSystemPlugin)
-
-RTTSystemPlugin::RTTSystemPlugin() 
+void RTTSystemPlugin::Load(int argc, char **argv)
 {
-}
-
-void RTTSystemPlugin::initialize()
-{
-  // Args for init functions
-  // TODO: Get these from SDF
-  int argc = 0;
-  char **argv = NULL;
-
   // Initialize RTT
   __os_init(argc, argv);
 
@@ -54,25 +43,19 @@ void RTTSystemPlugin::initialize()
   }
 }
 
-void RTTSystemPlugin::Load(gazebo::physics::WorldPtr world, sdf::ElementPtr sdf)
+void RTTSystemPlugin::Init()
 {
-  // Run RTT initialization
-  this->initialize();
-
-  // Connect the RTT system to the world update (unless it already has been, in
-  // which case this is a noop)
-  this->connectWorld(world);
-
   // Initialize and enable the simulation clock 
   rtt_rosclock::use_manual_clock();
   rtt_rosclock::enable_sim();
+  
+  update_connection_ = 
+    gazebo::event::Events::ConnectWorldUpdateBegin(
+        boost::bind(&RTTSystemPlugin::updateClock, this));
 }
 
 RTTSystemPlugin::~RTTSystemPlugin() 
 {
-  // Disconnect from gazebo events
-  gazebo::event::Events::DisconnectWorldUpdateBegin(update_connection_);
-
   // Stop the Orb thread
   if(!CORBA::is_nil(RTT::corba::TaskContextServer::orb)) {
     RTT::corba::TaskContextServer::ShutdownOrb();
@@ -81,30 +64,13 @@ RTTSystemPlugin::~RTTSystemPlugin()
   }
 }
 
-void RTTSystemPlugin::connectWorld(gazebo::physics::WorldPtr world) 
-{
-  // Only set the world if it hasn't been set yet
-  if(world_.get() == NULL) {
-    // Store the world
-    world_ = world;
-    // Listen to the update event. This event is broadcast every simulation iteration.
-    update_connection_ = 
-      gazebo::event::Events::ConnectWorldUpdateBegin(
-          boost::bind(&RTTSystemPlugin::updateClock, this));
-  }
-}
-
 void RTTSystemPlugin::updateClock()
 {
-  // Make sure the world isn't an illusion
-  if(world_.get() == NULL) {
-    return;
-  }
-
   // Get the simulation time
-  gazebo::common::Time gz_time = world_->GetSimTime();
-  RTT::os::TimeService::Seconds gz_secs = gz_time.Double();
+  gazebo::common::Time gz_time = gazebo::physics::get_world()->GetSimTime();
 
   // Update the clock from the simulation time and execute the SimClockActivities
   rtt_rosclock::update_sim_clock(ros::Time(gz_time.sec, gz_time.nsec));
 }
+
+GZ_REGISTER_SYSTEM_PLUGIN(rtt_gazebo_world::RTTSystemPlugin)
