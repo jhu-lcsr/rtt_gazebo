@@ -171,6 +171,8 @@ void GazeboDeployerModelPlugin::loadThread()
       gzerr << "SDF model plugin specified a special gazebo component to connect to the gazebo update, named \""<<model_component_name<<"\", but there is no peer by that name." <<std::endl;
       return;
     }
+  } else {
+    return;
   }
 
   // Make sure the component has the required interfaces
