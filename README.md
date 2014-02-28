@@ -11,7 +11,8 @@ hardware.
 
 ***NOTE:*** *The Orocos Toolchain packages (RTT amd OCL) need to be built with
 the following CMake arguments to enable use of the remote console
-(`rtt_gazebo_console`):*
+(`rtt_gazebo_console`). These are the default arguments used in the
+ROS-distributed Orocos binary packages:*
 
 ```
 -DENABLE_CORBA=ON -DCORBA_IMPLEMENTATION=OMNIORB

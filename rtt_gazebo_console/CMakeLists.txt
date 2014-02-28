@@ -25,3 +25,6 @@ orocos_executable(console src/console.cpp)
 target_link_libraries(console ${USE_OROCOS_LIBRARIES})
 
 orocos_generate_package()
+
+# Install targets
+install(TARGETS console)
