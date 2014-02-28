@@ -8,10 +8,10 @@ that they can have API-level access to Gazebo.
 
 ## Design
 
-This plugin aims to provide an easy way to run RTT-based state estimation and
-control systems in Gazebo for use on real hardware. This means that the RTT
-components used with this plugin shuold be identical to the ones used on the
-real system. 
+This plugin aims to provide an easy and efficient way to simulate RTT-based
+state estimation and control systems for use on real hardware. This means that
+the RTT components used with this plugin should be identical to the ones used
+on the real system. 
 
 ### Gazebo RTT Component
 
@@ -50,36 +50,35 @@ this->provides("gazebo")->addOperation("update",&DefaultGazeboComponent::gazeboU
 ```
 
 For example implementations of these operations, see the [default gazebo
-component](src/default_gazebo_component.cpp). In the future, these operations
-will be automatically created by an RTT Service which can be loaded on any
-TaskContext.
+component](../rtt_gazebo_examples/src/default_gazebo_component.cpp). In the
+future, these operations will be automatically created by an RTT Service which
+can be loaded on any TaskContext.
 
 ### Gazebo Deployer
 
-The RTT component (either the default or a user-supplied one) is named after the
-Gazebo model whem it is loaded into an Orocos OCL DeploymentComponent. By
-default, all models are loaded into the same DeploymentComponent, called
-"gazebo", but they can specify that they need to be isolated, in which case they
-are loaded in an alternative DeploymentComponent named
-"MODEL\_NAME\_\_deployer\_\_". This allows components associated with different
-models to either be isolated or interact with each-other.
+The desired RTT component is named after the Gazebo model whem it is loaded
+into an Orocos OCL DeploymentComponent. By default, all models are loaded into
+the same DeploymentComponent, called "gazebo", but they can specify that they
+need to be isolated, in which case they are loaded in an alternative
+DeploymentComponent named "MODEL\_NAME\_\_deployer\_\_". This allows components
+associated with different models to either be isolated or interact with
+each-other.
  
 ### Time
 
 Since systems in a simulated world are neither guaranteed nor likely to run in
 real-time, we override the normal RTT TimeService and update it at each Gazebo
-simulation step so that it remains synchronized with Gazebo's simulation clock.
+simulation step so that it is synchronized with Gazebo's simulation clock.
+This is done with the `rtt_rosclock` manual clock source.
 
 *However*, without using a custom RTT Activity to run a component (i.e. running a
 component with the normal RTT::PeriodicActivity), that component will be
 scheduled based on the *wall time*. 
 
 Instead, components that are meant to run periodically and which should run in
-accordance with simulation time should be executed by a GazeboActivity, which
-still needs to be written. This GazeboActivity would be triggered by a Gazebo
-World Update Begin event, during which it would check its timers and execute its
-tasks appropriately based on their desired periods. Note that this requirement
-is different than the RTT::SimulationActivity, which runs as fast as possible. 
+accordance with simulation time should be executed by an
+`rtt_rosclock::SimClockActivity`.  Note that this requirement is different than
+the RTT::SimulationActivity, which runs as fast as possible. 
 
 ### CORBA-Based Console Interation
 
@@ -119,10 +118,15 @@ run!***
 <gazebo>
   <plugin name="rtt_gazebo" filename="librtt_gazebo_deployer.so">
     <isolated/>
+    <component>sevenbot</component>
     <opsScript>
       /* A comment! */
       import("rtt_ros");
       ros.import("rtt_std_msgs");
+
+      ros.import("rtt_gazebo_examples");
+
+      loadComponent("sevenbot", "DefaultGazeboComponent");
     </opsScript>
   </plugin>
 </gazebo>
