@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<sdf version="1.4">
+  <world name="rtt_gazebo_world">
+    <plugin name="rtt_gazebo_world" filename="librtt_gazebo_world.so"/>
+  </world>
+</sdf>
+

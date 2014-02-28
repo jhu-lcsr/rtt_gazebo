@@ -31,6 +31,7 @@ namespace rtt_gazebo_deployer {
   public:
 
     /* \brief Constructor
+     * Gets an instance of \ref RTTSystem
      */
     GazeboDeployerModelPlugin();
 
@@ -68,6 +69,9 @@ namespace rtt_gazebo_deployer {
     static RTT::corba::TaskContextServer * taskcontext_server;
     //! Map between model names and deployment components
     static std::map<std::string,boost::shared_ptr<OCL::DeploymentComponent> > deployers;
+
+    //! Shared pointer to the RTTSystem singleton
+    boost::shared_ptr<RTTSystem> rtt_system_;
 
     //! Deferred load in case something blocks
     boost::thread deferred_load_thread_;

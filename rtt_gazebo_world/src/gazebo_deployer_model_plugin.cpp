@@ -62,6 +62,7 @@
 
 // RTT/ROS Simulation Clock Activity
 
+#include "rtt_system.h"
 #include "gazebo_deployer_model_plugin.h"
 
 using namespace rtt_gazebo_deployer;
@@ -73,6 +74,8 @@ GZ_REGISTER_MODEL_PLUGIN(GazeboDeployerModelPlugin);
 RTT::corba::TaskContextServer * GazeboDeployerModelPlugin::taskcontext_server;
 
 std::map<std::string,boost::shared_ptr<OCL::DeploymentComponent> > GazeboDeployerModelPlugin::deployers;
+
+boost::weak_ptr<RTTSystem> RTTSystem::singleton;
 
 GazeboDeployerModelPlugin::GazeboDeployerModelPlugin() : 
   gazebo::ModelPlugin()
@@ -90,12 +93,18 @@ void GazeboDeployerModelPlugin::Load(
     gazebo::physics::ModelPtr parent, 
     sdf::ElementPtr sdf)
 {
+  // Get an instance to the RTT subsystem
+  rtt_system_ = RTTSystem::Instance();
+
   // Save pointer to the model
   parent_model_ = parent;
   
   // Save the SDF source
   sdf_ = sdf;
   
+  // Connect the RTT system to the world update (unless it already has been, in which case this is a noop)
+  rtt_system_->connectWorld(parent->GetWorld());
+
   // Create main gazebo deployer if necessary
   if(deployers.find("gazebo") == deployers.end()) {
     // Create the gazebo deployer

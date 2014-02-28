@@ -25,33 +25,17 @@
 // RTT/ROS Simulation Clock Activity
 #include <rtt_rosclock/rtt_rosclock.h>
 
-#include "rtt_system.h"
+#include "rtt_system_plugin.h"
 
-using namespace rtt_gazebo_deployer;
+using namespace rtt_gazebo_world;
 
-boost::shared_ptr<RTTSystem> RTTSystem::Instance() 
-{
-  // Create a new instance, if necessary
-  boost::shared_ptr<RTTSystem> shared = singleton.lock();
-  if(singleton.expired()) {
-    shared.reset(new RTTSystem());
-    shared->initialize();
-    singleton = shared;
-  }
+GZ_REGISTER_WORLD_PLUGIN(rtt_gazebo_world::RTTSystemPlugin)
 
-  return shared;
-}
-
-boost::shared_ptr<RTTSystem> RTTSystem::GetInstance() 
-{
-  return singleton.lock();
-}
-
-RTTSystem::RTTSystem() 
+RTTSystemPlugin::RTTSystemPlugin() 
 {
 }
 
-void RTTSystem::initialize()
+void RTTSystemPlugin::initialize()
 {
   // Args for init functions
   // TODO: Get these from SDF
@@ -68,13 +52,23 @@ void RTTSystem::initialize()
     // Propcess orb requests in a thread
     RTT::corba::TaskContextServer::ThreadOrb();
   }
+}
+
+void RTTSystemPlugin::Load(gazebo::physics::WorldPtr world, sdf::ElementPtr sdf)
+{
+  // Run RTT initialization
+  this->initialize();
+
+  // Connect the RTT system to the world update (unless it already has been, in
+  // which case this is a noop)
+  this->connectWorld(world);
 
   // Initialize and enable the simulation clock 
   rtt_rosclock::use_manual_clock();
   rtt_rosclock::enable_sim();
 }
 
-RTTSystem::~RTTSystem() 
+RTTSystemPlugin::~RTTSystemPlugin() 
 {
   // Disconnect from gazebo events
   gazebo::event::Events::DisconnectWorldUpdateBegin(update_connection_);
@@ -87,7 +81,7 @@ RTTSystem::~RTTSystem()
   }
 }
 
-void RTTSystem::connectWorld(gazebo::physics::WorldPtr world) 
+void RTTSystemPlugin::connectWorld(gazebo::physics::WorldPtr world) 
 {
   // Only set the world if it hasn't been set yet
   if(world_.get() == NULL) {
@@ -96,11 +90,11 @@ void RTTSystem::connectWorld(gazebo::physics::WorldPtr world)
     // Listen to the update event. This event is broadcast every simulation iteration.
     update_connection_ = 
       gazebo::event::Events::ConnectWorldUpdateBegin(
-          boost::bind(&RTTSystem::updateClock, this));
+          boost::bind(&RTTSystemPlugin::updateClock, this));
   }
 }
 
-void RTTSystem::updateClock()
+void RTTSystemPlugin::updateClock()
 {
   // Make sure the world isn't an illusion
   if(world_.get() == NULL) {

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(rtt_gazebo_deployer)
+project(rtt_gazebo_world)
 
 ## Find catkin macros and libraries
 find_package(catkin REQUIRED COMPONENTS)
@@ -37,9 +37,7 @@ orocos_use_package( orocos-rtt-corba )
 orocos_use_package( rtt-typekit )
 
 ## Gazebo RTT plugin
-add_library(${PROJECT_NAME} 
-  #src/rtt_system.cpp
-  src/gazebo_deployer_model_plugin.cpp)
+add_library(${PROJECT_NAME} src/rtt_system_plugin.cpp)
 set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS -DRTT_STATIC)
 target_link_libraries(${PROJECT_NAME}
   ${GAZEBO_LIBRARIES}

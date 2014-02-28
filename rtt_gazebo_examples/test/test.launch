@@ -6,7 +6,7 @@
 
   <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <!--arg name="world_name" value="$(find rrbot_gazebo)/worlds/rrbot.world"/-->
+    <arg name="world_name" value="$(find rtt_gazebo_world)/worlds/rtt_gazebo.world"/>
     <arg name="debug" value="$(arg debug)" />
     <arg name="gui" value="$(arg gui)" />
     <arg name="paused" value="false"/>
@@ -16,7 +16,7 @@
 
   <!-- Load the URDF into the ROS Parameter Server -->
   <param name="robot_description"
-	 command="$(find xacro)/xacro.py '$(find rtt_gazebo_deployer)/test/testbot.xacro'" />
+	 command="$(find xacro)/xacro.py '$(find rtt_gazebo_examples)/test/testbot.xacro'" />
 
   <!-- Call a python script to the run a service call to gazebo_ros to spawn a URDF robot -->
   <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
