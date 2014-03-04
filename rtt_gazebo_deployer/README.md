@@ -106,15 +106,13 @@ run!
 <gazebo>
   <plugin name="rtt_gazebo" filename="librtt_gazebo_deployer.so">
     <isolated/>
-    <component>sevenbot</component>
+    <component>
+      <package>rtt_gazebo_examples</package>
+      <type>DefaultGazeboComponent</type>
+      <name>sevenbot</name>
+    </component>
     <opsScript>
-      /* A comment! */
-      import("rtt_ros");
-      ros.import("rtt_std_msgs");
-
-      ros.import("rtt_gazebo_examples");
-
-      loadComponent("sevenbot", "DefaultGazeboComponent");
+      /* Run arbitrary ops script here */
     </opsScript>
   </plugin>
 </gazebo>
