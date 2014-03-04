@@ -70,18 +70,27 @@ running inside of Gazebo, see [rtt\_gazebo\_console](../rtt_gazebo_console).
 The RTT Gazebo deployer plugin is a model plugin, so it gets attached to a
 given model in SDF or URDF. 
 
+The following tags are required:
+* `<component>...</component>` A user-defined RTT component loaded in the
+  plugin as the Gazebo component. This is the component which will be connected
+  to the Gazebo update hook. This component is specified by the three following
+  tags:
+  * `<package>...</package>` The (ROS) package in which the component is defined.
+  * `<type>...</type>` The type of the component.
+  * `<name>...</name>` The name of the component.
+  Underneath, this imports the desired package and then loads a component with the
+  given type and desired name into this model's deployer.
+
 The following tags are supported:
-* `<opsScript>...</opsScript>` In-line Oroocs Ops script to be executed when the
-  plugin is loaded. ***NOTE: only `/* ... */` comments can be used because
-  Gazebo removes all line breaks from parsed XML!*** 
+* `<opsScript>...</opsScript>` In-line Oroocs Ops script to be executed after the
+  plugin is loaded and the RTT component has been loaded. ***NOTE: only `/* ...
+  */` comments can be used because Gazebo removes all line breaks from parsed
+  XML!*** 
 * `<opsScriptFile>/path/to/file.ops</opsScriptFile>` The path to an Orocos Ops
   script file to be executed when the plugin is loaded.
 * `<isolated/>` Load the RTT components in a DeploymentComponent specific to
   this model named "MODEL\_NAME\_\_deployer\_\_". Without this tag, all
   components are created in the "gazebo" DeploymentComponent.
-* `<component>COMPONENT_NAME</component>` Use a user-defined component loaded in
-  either the `<opsScript>` or `<opsScriptFile>` tags as the Gazebo component
-  instead of the DefaultGazeboComponent.
 
 For example, the following XML would load the RTT Gazebo plugin, create a
 DefaultGazeboComponent with the same name as the mode in an isolated
