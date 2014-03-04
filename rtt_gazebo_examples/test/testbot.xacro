@@ -4,14 +4,14 @@
   <!-- Gazebo Plugin -->
   <gazebo>
     <plugin name="rtt_gazebo" filename="librtt_gazebo_deployer.so">
-      <component>sevenbot</component>
+      <component>
+        <package>rtt_gazebo_examples</package>
+        <type>DefaultGazeboComponent</type>
+        <name>sevenbot</name>
+      </component>
       <opsScript>
         import("rtt_ros");
         ros.import("rtt_std_msgs");
-        ros.import("rtt_gazebo_examples");
-
-        /* Load sevenbot component */
-        loadComponent("sevenbot", "DefaultGazeboComponent");
         
         /* a comment */
         setPeriodicActivity("sevenbot",0.001,LowestPriority,ORO_SCHED_OTHER);

@@ -123,13 +123,14 @@ void GazeboDeployerModelPlugin::Load(
   }
 
   // Perform the rest of the asynchronous loading
-  //deferred_load_thread_ = boost::thread(boost::bind(&GazeboDeployerModelPlugin::loadThread, this));
-  this->loadThread();
+  deferred_load_thread_ = boost::thread(boost::bind(&GazeboDeployerModelPlugin::loadThread, this));
 }
 
 // Load in seperate thread from Gazebo in case something blocks
 void GazeboDeployerModelPlugin::loadThread()
 {
+  RTT::Logger::Instance()->in("GazeboDeployerModelPlugin::loadThread");
+
   // Error message if the model couldn't be found
   if (!parent_model_) {
     return;
@@ -141,29 +142,12 @@ void GazeboDeployerModelPlugin::loadThread()
   // Get a pointer to this model's deployer
   boost::shared_ptr<OCL::DeploymentComponent> deployer = deployers[deployer_name_];
 
-  // Get the orocos ops script to run in the deployer
-  if(sdf_->HasElement("opsScriptFile")) 
-  {
-    std::string ops_script_file;
-    ops_script_file = sdf_->GetElement("opsScriptFile")->Get<std::string>();
-    if(!deployer->runScript(ops_script_file)) {
-      gzerr << "Could not run ops script file "<<ops_script_file<<"!" << std::endl;
-      return;
-    }
-  }
-  else if(sdf_->HasElement("opsScript")) 
-  {
-    std::string ops_script;
-    ops_script = sdf_->GetElement("opsScript")->Get<std::string>();
-    if(!deployer->getProvider<RTT::Scripting>("scripting")->eval(ops_script)) {
-      gzerr << "Could not run inline ops script!" << std::endl;
-      return;
-    }
-  }
-
   // Check if there is a special gazebo component that should be connected to the world
-  if(sdf_->HasElement("component")) {
+  if(sdf_->HasElement("component")) 
+  {
+    RTT::log(RTT::Info) << "Loading Gazebo RTT component..." << RTT::endlog();
     sdf::ElementPtr component_elem = sdf_->GetElement("component");
+
     if(!component_elem->HasElement("package") ||
        !component_elem->HasElement("type") ||
        !component_elem->HasElement("name"))
@@ -196,6 +180,7 @@ void GazeboDeployerModelPlugin::loadThread()
       return;
     }
   } else {
+    RTT::log(RTT::Warning) << "No RTT component defined for Gazebo hooks." << RTT::endlog();
     return;
   }
 
@@ -234,6 +219,26 @@ void GazeboDeployerModelPlugin::loadThread()
   // Listen to the update event. This event is broadcast every simulation iteration.
   update_connection_ = gazebo::event::Events::ConnectWorldUpdateBegin(
       boost::bind(&GazeboDeployerModelPlugin::gazeboUpdate, this));
+
+  // Get the orocos ops script to run in the deployer
+  if(sdf_->HasElement("opsScriptFile")) 
+  {
+    std::string ops_script_file;
+    ops_script_file = sdf_->GetElement("opsScriptFile")->Get<std::string>();
+    if(!deployer->runScript(ops_script_file)) {
+      gzerr << "Could not run ops script file "<<ops_script_file<<"!" << std::endl;
+      return;
+    }
+  }
+  else if(sdf_->HasElement("opsScript")) 
+  {
+    std::string ops_script;
+    ops_script = sdf_->GetElement("opsScript")->Get<std::string>();
+    if(!deployer->getProvider<RTT::Scripting>("scripting")->eval(ops_script)) {
+      gzerr << "Could not run inline ops script!" << std::endl;
+      return;
+    }
+  }
 }
 
 // Called by the world update start event
