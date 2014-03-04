@@ -73,13 +73,13 @@ given model in SDF or URDF.
 The following tags are required:
 * `<component>...</component>` A user-defined RTT component loaded in the
   plugin as the Gazebo component. This is the component which will be connected
-  to the Gazebo update hook. This component is specified by the three following
-  tags:
+  to the Gazebo update hook.  Underneath, this imports the desired package and
+  then loads a component with the given type and desired name into this model's
+  deployer.  This component is specified by the three following tags:
+
   * `<package>...</package>` The (ROS) package in which the component is defined.
   * `<type>...</type>` The type of the component.
   * `<name>...</name>` The name of the component.
-  Underneath, this imports the desired package and then loads a component with the
-  given type and desired name into this model's deployer.
 
 The following tags are supported:
 * `<opsScript>...</opsScript>` In-line Oroocs Ops script to be executed after the
