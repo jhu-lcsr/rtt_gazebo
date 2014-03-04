@@ -60,6 +60,8 @@
 #include <rtt/transports/corba/corba.h>
 #include <rtt/transports/corba/TaskContextServer.hpp>
 
+#include <rtt_ros/rtt_ros.h>
+
 // RTT/ROS Simulation Clock Activity
 
 #include "gazebo_deployer_model_plugin.h"
@@ -161,8 +163,30 @@ void GazeboDeployerModelPlugin::loadThread()
 
   // Check if there is a special gazebo component that should be connected to the world
   if(sdf_->HasElement("component")) {
+    sdf::ElementPtr component_elem = sdf_->GetElement("component");
+    if(!component_elem->HasElement("package") ||
+       !component_elem->HasElement("type") ||
+       !component_elem->HasElement("name"))
+    {
+      gzerr << "SDF rtt_gazebo plugin <component> tag is missing a required field!" << std::endl;
+      return;
+    }
     // Get the component name
-    std::string model_component_name = sdf_->GetElement("component")->Get<std::string>();
+    std::string model_component_package = component_elem->GetElement("package")->Get<std::string>();
+    std::string model_component_type = component_elem->GetElement("type")->Get<std::string>();
+    std::string model_component_name = component_elem->GetElement("name")->Get<std::string>();
+
+    // Import the package
+    if(!rtt_ros::import(model_component_package)) {
+      gzerr << "Could not import rtt_gazebo model component package: \"" << model_component_package << "\"" <<std::endl;
+      return;
+    }
+
+    // Load the component
+    if(!deployer->loadComponent(model_component_name, model_component_type)) {
+      gzerr << "Could not load rtt_gazebo model component: \"" << model_component_type << "\"" <<std::endl;
+      return;
+    }
 
     // Get the model component from the deployer by name
     if(deployer->hasPeer(model_component_name)) {

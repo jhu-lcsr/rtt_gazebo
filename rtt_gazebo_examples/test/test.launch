@@ -21,7 +21,7 @@
 
   <!-- Call a python script to the run a service call to gazebo_ros to spawn a URDF robot -->
   <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
-	args="-urdf -model sevenbot -param robot_description"/>
+	args="-urdf -model barrett_manager -param robot_description"/>
 
   <!-- Launch the CORBA TO naming service -->
   <node if="$(arg TAO)" name="corba_naming_service" pkg="rtt_ros" type="corba-naming-service" args="-m 1"/>

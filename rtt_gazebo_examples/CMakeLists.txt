@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(rtt_gazebo_examples)
 
 ## Find catkin macros and libraries
-find_package(catkin REQUIRED COMPONENTS rtt_gazebo_deployer)
+find_package(catkin REQUIRED COMPONENTS rtt_ros)
 
 # Depend on system install of Gazebo 
 find_package(gazebo REQUIRED)
@@ -11,11 +11,6 @@ include(${OROCOS-RTT_USE_FILE_PATH}/UseOROCOS-RTT.cmake )
 find_package(orocos_kdl REQUIRED)
 find_package(Eigen REQUIRED)
 find_package(Boost COMPONENTS thread REQUIRED)
-
-catkin_package(
-  #INCLUDE_DIRS include
-  DEPENDS rtt gazebo eigen
-  )
 
 link_directories(
   ${GAZEBO_LIBRARY_DIRS}
