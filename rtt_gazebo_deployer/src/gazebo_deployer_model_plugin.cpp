@@ -234,7 +234,7 @@ void GazeboDeployerModelPlugin::loadThread()
   {
     std::string ops_script;
     ops_script = sdf_->GetElement("opsScript")->Get<std::string>();
-    if(!deployer->getProvider<RTT::Scripting>("scripting")->eval(ops_script)) {
+    if(!deployer->getProvider<RTT::Scripting>("scripting")->runScript(ops_script)) {
       gzerr << "Could not run inline ops script!" << std::endl;
       return;
     }

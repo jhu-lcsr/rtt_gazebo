@@ -34,6 +34,10 @@ void RTTSystemPlugin::Load(int argc, char **argv)
   // Initialize RTT
   __os_init(argc, argv);
 
+  RTT::Logger::log().setStdStream(gzerr);
+  RTT::Logger::log().mayLogStdOut(true);
+  RTT::Logger::log().setLogLevel(RTT::Logger::Info);
+
   // Setup TaskContext server if necessary
   if(CORBA::is_nil(RTT::corba::TaskContextServer::orb)) {
     // Initialize orb
