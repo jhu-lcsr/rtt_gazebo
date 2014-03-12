@@ -34,7 +34,7 @@ void RTTSystemPlugin::Load(int argc, char **argv)
   // Initialize RTT
   __os_init(argc, argv);
 
-  RTT::Logger::log().setStdStream(gzerr);
+  RTT::Logger::log().setStdStream(std::cerr);
   RTT::Logger::log().mayLogStdOut(true);
   RTT::Logger::log().setLogLevel(RTT::Logger::Info);
 

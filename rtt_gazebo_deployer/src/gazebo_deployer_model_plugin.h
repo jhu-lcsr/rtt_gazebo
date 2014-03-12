@@ -1,11 +1,6 @@
 #ifndef __RTT_GAZEBO_DEPLOYER_GAZEBO_DEPLOYER_MODEL_PLUGIN_H
 #define __RTT_GAZEBO_DEPLOYER_GAZEBO_DEPLOYER_MODEL_PLUGIN_H
 
-#include <cstdlib>
-
-// Boost
-#include <boost/bind.hpp>
-
 // Gazebo
 #include <gazebo/gazebo.hh>
 #include <gazebo/physics/physics.hh>
@@ -14,12 +9,9 @@
 // Orocos
 #include <rtt/deployment/ComponentLoader.hpp>
 #include <ocl/DeploymentComponent.hpp>
-#include <ocl/TaskBrowser.hpp>
 #include <ocl/LoggingService.hpp>
 #include <rtt/Logger.hpp>
 
-
-#include <rtt/os/startstop.h>
 #include <rtt/scripting/Scripting.hpp>
 #include <rtt/transports/corba/corba.h>
 #include <rtt/transports/corba/TaskContextServer.hpp>

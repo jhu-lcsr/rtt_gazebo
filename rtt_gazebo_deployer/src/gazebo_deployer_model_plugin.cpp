@@ -37,8 +37,6 @@
 /* Author: Jonathan Bohren
    Desc:   Gazebo plugin for running OROCOS RTT components */
 
-#include <cstdlib>
-
 // Boost
 #include <boost/bind.hpp>
 
@@ -50,12 +48,9 @@
 // Orocos
 #include <rtt/deployment/ComponentLoader.hpp>
 #include <ocl/DeploymentComponent.hpp>
-#include <ocl/TaskBrowser.hpp>
 #include <ocl/LoggingService.hpp>
 #include <rtt/Logger.hpp>
 
-
-#include <rtt/os/startstop.h>
 #include <rtt/scripting/Scripting.hpp>
 #include <rtt/transports/corba/corba.h>
 #include <rtt/transports/corba/TaskContextServer.hpp>
@@ -156,9 +151,12 @@ void GazeboDeployerModelPlugin::loadThread()
       return;
     }
     // Get the component name
+    RTT::log(RTT::Info) << "Getting gazebo RTT component information..." << RTT::endlog();
     std::string model_component_package = component_elem->GetElement("package")->Get<std::string>();
     std::string model_component_type = component_elem->GetElement("type")->Get<std::string>();
     std::string model_component_name = component_elem->GetElement("name")->Get<std::string>();
+
+    RTT::log(RTT::Info) << "Loading gazebo RTT component package \"" << model_component_package <<"\""<<RTT::endlog();
 
     // Import the package
     if(!rtt_ros::import(model_component_package)) {
