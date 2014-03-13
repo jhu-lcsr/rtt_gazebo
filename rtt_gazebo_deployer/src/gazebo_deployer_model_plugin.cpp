@@ -79,7 +79,12 @@ GazeboDeployerModelPlugin::GazeboDeployerModelPlugin() :
 GazeboDeployerModelPlugin::~GazeboDeployerModelPlugin()
 {
   // Disconnect from gazebo events
-  gazebo::event::Events::DisconnectWorldUpdateBegin(update_connection_);
+  for(std::vector<gazebo::event::ConnectionPtr>::iterator it = update_connections_.begin();
+      it != update_connections_.end();
+      ++it)
+  {
+    gazebo::event::Events::DisconnectWorldUpdateBegin(*it);
+  }
 }
 
 // Overloaded Gazebo entry point
@@ -131,92 +136,108 @@ void GazeboDeployerModelPlugin::loadThread()
     return;
   }
 
-  // Initialize gazebo component
-  model_component_ = NULL;
-
   // Get a pointer to this model's deployer
   boost::shared_ptr<OCL::DeploymentComponent> deployer = deployers[deployer_name_];
 
   // Check if there is a special gazebo component that should be connected to the world
   if(sdf_->HasElement("component")) 
   {
-    RTT::log(RTT::Info) << "Loading Gazebo RTT component..." << RTT::endlog();
+    RTT::log(RTT::Info) << "Loading Gazebo RTT components..." << RTT::endlog();
+
     sdf::ElementPtr component_elem = sdf_->GetElement("component");
 
-    if(!component_elem->HasElement("package") ||
-       !component_elem->HasElement("type") ||
-       !component_elem->HasElement("name"))
+    while(component_elem && component_elem->GetName() == "component") 
     {
-      gzerr << "SDF rtt_gazebo plugin <component> tag is missing a required field!" << std::endl;
-      return;
-    }
-    // Get the component name
-    RTT::log(RTT::Info) << "Getting gazebo RTT component information..." << RTT::endlog();
-    std::string model_component_package = component_elem->GetElement("package")->Get<std::string>();
-    std::string model_component_type = component_elem->GetElement("type")->Get<std::string>();
-    std::string model_component_name = component_elem->GetElement("name")->Get<std::string>();
+      // Initialize gazebo component
+      RTT::TaskContext* new_model_component = NULL;
 
-    RTT::log(RTT::Info) << "Loading gazebo RTT component package \"" << model_component_package <<"\""<<RTT::endlog();
+      if(!component_elem->HasElement("package") ||
+         !component_elem->HasElement("type") ||
+         !component_elem->HasElement("name"))
+      {
+        gzerr << "SDF rtt_gazebo plugin <component> tag is missing a required field!" << std::endl;
+        return;
+      }
+      // Get the component name
+      RTT::log(RTT::Info) << "Getting gazebo RTT component information..." << RTT::endlog();
+      std::string model_component_package = component_elem->GetElement("package")->Get<std::string>();
+      std::string model_component_type = component_elem->GetElement("type")->Get<std::string>();
+      std::string model_component_name = component_elem->GetElement("name")->Get<std::string>();
 
-    // Import the package
-    if(!rtt_ros::import(model_component_package)) {
-      gzerr << "Could not import rtt_gazebo model component package: \"" << model_component_package << "\"" <<std::endl;
-      return;
-    }
+      RTT::log(RTT::Info) << "Loading gazebo RTT component package \"" << model_component_package <<"\""<<RTT::endlog();
 
-    // Load the component
-    if(!deployer->loadComponent(model_component_name, model_component_type)) {
-      gzerr << "Could not load rtt_gazebo model component: \"" << model_component_type << "\"" <<std::endl;
-      return;
-    }
+      // Import the package
+      if(!rtt_ros::import(model_component_package)) {
+        gzerr << "Could not import rtt_gazebo model component package: \"" << model_component_package << "\"" <<std::endl;
+        return;
+      }
 
-    // Get the model component from the deployer by name
-    if(deployer->hasPeer(model_component_name)) {
-      model_component_ = deployer->getPeer(model_component_name);
-    } else {
-      gzerr << "SDF model plugin specified a special gazebo component to connect to the gazebo update, named \""<<model_component_name<<"\", but there is no peer by that name." <<std::endl;
-      return;
+      // Load the component
+      if(!deployer->loadComponent(model_component_name, model_component_type)) {
+        gzerr << "Could not load rtt_gazebo model component: \"" << model_component_type << "\"" <<std::endl;
+        return;
+      }
+
+      // Get the model component from the deployer by name
+      if(deployer->hasPeer(model_component_name)) {
+        new_model_component = deployer->getPeer(model_component_name);
+      } else {
+        gzerr << "SDF model plugin specified a special gazebo component to connect to the gazebo update, named \""<<model_component_name<<"\", but there is no peer by that name." <<std::endl;
+        return;
+      }
+
+      // Make sure the component has the required interfaces
+      if( new_model_component == NULL ) {
+        gzerr << "RTT model component was not properly created." << std::endl; return; }
+      if( !new_model_component->provides()->hasService("gazebo") ) {
+        gzerr << "RTT model component does not have required \"gazebo\" service." << std::endl; return; }
+      if( !new_model_component->provides("gazebo")->hasOperation("configure") ) {
+        gzerr << "RTT model component does not have required \"gazebo.configure\" operation." << std::endl; return; }
+      if( !new_model_component->provides("gazebo")->hasOperation("update") ) {
+        gzerr << "RTT model component does not have required \"gazebo.update\" operation." << std::endl; return; }
+
+      // Configure the component with the parent model
+      RTT::OperationCaller<bool(gazebo::physics::ModelPtr)> gazebo_configure = 
+        new_model_component->provides("gazebo")->getOperation("configure");
+
+      // Make sure the operation is ready
+      if(!gazebo_configure.ready()) {
+        gzerr <<"RTT model component's \"gazebo.configure\" operation could not be connected. Check its signature." << std::endl;
+        return;
+      }
+
+      if(!gazebo_configure(parent_model_)){
+        gzerr <<"RTT model component's \"gazebo.configure\" operation returned false." << std::endl;
+        return;
+      }
+
+      // Get gazebo update function
+      GazeboUpdateCaller gazebo_update_caller = new_model_component->provides("gazebo")->getOperation("update");
+
+      if(!gazebo_update_caller.ready()) {
+        gzerr <<"RTT model component's \"gazebo.update\" operation could not be connected. Check its signature." << std::endl;
+        return;
+      }
+
+      model_components_.push_back(new_model_component);
+      gazebo_update_callers_.push_back(gazebo_update_caller);
+
+      // Listen to the update event. This event is broadcast every simulation iteration.
+      update_connections_.push_back(gazebo::event::Events::ConnectWorldUpdateBegin(
+              boost::bind(&GazeboDeployerModelPlugin::gazeboUpdate, this)));
+
+      // Get the next element
+      component_elem = component_elem->GetNextElement("component");
     }
   } else {
     RTT::log(RTT::Warning) << "No RTT component defined for Gazebo hooks." << RTT::endlog();
     return;
   }
 
-  // Make sure the component has the required interfaces
-  if( model_component_ == NULL ) {
-    gzerr << "RTT model component was not properly created." << std::endl; return; }
-  if( !model_component_->provides()->hasService("gazebo") ) {
-    gzerr << "RTT model component does not have required \"gazebo\" service." << std::endl; return; }
-  if( !model_component_->provides("gazebo")->hasOperation("configure") ) {
-    gzerr << "RTT model component does not have required \"gazebo.configure\" operation." << std::endl; return; }
-  if( !model_component_->provides("gazebo")->hasOperation("update") ) {
-    gzerr << "RTT model component does not have required \"gazebo.update\" operation." << std::endl; return; }
-
-  // Configure the component with the parent model
-  RTT::OperationCaller<bool(gazebo::physics::ModelPtr)> gazebo_configure = 
-    model_component_->provides("gazebo")->getOperation("configure");
-
-  // Make sure the operation is ready
-  if(!gazebo_configure.ready()) {
-    gzerr <<"RTT model component's \"gazebo.configure\" operation could not be connected. Check its signature." << std::endl;
+  if(model_components_.empty()) {
+    gzerr << "Could not load any RTT components!" << std::endl;
     return;
   }
-
-  if(!gazebo_configure(parent_model_)){
-    gzerr <<"RTT model component's \"gazebo.configure\" operation returned false." << std::endl;
-    return;
-  }
-
-  // Get gazebo update function
-  gazebo_update_ = model_component_->provides("gazebo")->getOperation("update");
-  if(!gazebo_update_.ready()) {
-    gzerr <<"RTT model component's \"gazebo.update\" operation could not be connected. Check its signature." << std::endl;
-    return;
-  }
-
-  // Listen to the update event. This event is broadcast every simulation iteration.
-  update_connection_ = gazebo::event::Events::ConnectWorldUpdateBegin(
-      boost::bind(&GazeboDeployerModelPlugin::gazeboUpdate, this));
 
   // Get the orocos ops script to run in the deployer
   if(sdf_->HasElement("opsScriptFile")) 
@@ -242,11 +263,11 @@ void GazeboDeployerModelPlugin::loadThread()
 // Called by the world update start event
 void GazeboDeployerModelPlugin::gazeboUpdate()
 {
-  // Make sure the gazebo component exists
-  if(model_component_ == NULL) {
-    return;
+  // Call orocos RTT model component gazebo.update() operations
+  for(std::vector<GazeboUpdateCaller>::iterator caller = gazebo_update_callers_.begin();
+      caller != gazebo_update_callers_.end();
+      ++caller)
+  {
+    (*caller)(parent_model_);
   }
-
-  // Call orocos RTT model component gazebo.update()
-  gazebo_update_(parent_model_);
 }

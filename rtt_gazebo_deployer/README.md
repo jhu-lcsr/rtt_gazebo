@@ -71,11 +71,12 @@ The RTT Gazebo deployer plugin is a model plugin, so it gets attached to a
 given model in SDF or URDF. 
 
 The following tags are required:
-* `<component>...</component>` A user-defined RTT component loaded in the
-  plugin as the Gazebo component. This is the component which will be connected
-  to the Gazebo update hook.  Underneath, this imports the desired package and
-  then loads a component with the given type and desired name into this model's
-  deployer.  This component is specified by the three following tags:
+* `<component>...</component>` One or more user-defined RTT components (one per
+  `<component>` tag) loaded in the plugin as the Gazebo component. This is the
+  component which will be connected to the Gazebo update hook.  Underneath,
+  this imports the desired package and then loads a component with the given
+  type and desired name into this model's deployer.  This component is
+  specified by the three following tags:
 
   * `<package>...</package>` The (ROS) package in which the component is defined.
   * `<type>...</type>` The type of the component.

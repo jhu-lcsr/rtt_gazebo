@@ -71,16 +71,17 @@ namespace rtt_gazebo_deployer {
     sdf::ElementPtr sdf_;
 
     //! A Gazebo event connection to the world update
-    gazebo::event::ConnectionPtr update_connection_;
+    std::vector<gazebo::event::ConnectionPtr> update_connections_;
 
     //! The name of the deployer in which this model should be loaded
     std::string deployer_name_;
 
     //! The name of the RTT component loaded in the deployer which should be connected to gazebo
-    RTT::TaskContext* model_component_;
+    std::vector<RTT::TaskContext*> model_components_;
 
     //! Operation for polling the model component 
-    RTT::OperationCaller<void(gazebo::physics::ModelPtr)> gazebo_update_;
+    typedef RTT::OperationCaller<void(gazebo::physics::ModelPtr)> GazeboUpdateCaller;
+    std::vector<GazeboUpdateCaller> gazebo_update_callers_;
   };
 }
 
