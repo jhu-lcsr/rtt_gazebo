@@ -36,7 +36,7 @@ void RTTSystemPlugin::Load(int argc, char **argv)
 
   RTT::Logger::log().setStdStream(std::cerr);
   RTT::Logger::log().mayLogStdOut(true);
-  RTT::Logger::log().setLogLevel(RTT::Logger::Info);
+  //RTT::Logger::log().setLogLevel(RTT::Logger::Info);
 
   // Setup TaskContext server if necessary
   if(CORBA::is_nil(RTT::corba::TaskContextServer::orb)) {

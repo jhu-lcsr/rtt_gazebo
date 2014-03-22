@@ -240,22 +240,29 @@ void GazeboDeployerModelPlugin::loadThread()
   }
 
   // Get the orocos ops script to run in the deployer
-  if(sdf_->HasElement("opsScriptFile")) 
+  if(sdf_->HasElement("orocosScript")) 
   {
-    std::string ops_script_file;
-    ops_script_file = sdf_->GetElement("opsScriptFile")->Get<std::string>();
-    if(!deployer->runScript(ops_script_file)) {
-      gzerr << "Could not run ops script file "<<ops_script_file<<"!" << std::endl;
-      return;
-    }
-  }
-  else if(sdf_->HasElement("opsScript")) 
-  {
-    std::string ops_script;
-    ops_script = sdf_->GetElement("opsScript")->Get<std::string>();
-    if(!deployer->getProvider<RTT::Scripting>("scripting")->runScript(ops_script)) {
-      gzerr << "Could not run inline ops script!" << std::endl;
-      return;
+    sdf::ElementPtr script_elem = sdf_->GetElement("orocosScript");
+
+    while(script_elem && script_elem->GetName() == "orocosScript") 
+    {
+      if(script_elem->HasElement("filename")) {
+        std::string ops_script_file = script_elem->GetElement("filename")->Get<std::string>();
+        gzlog << "Running orocos ops script file "<<ops_script_file<<"..." << std::endl;
+        if(!deployer->runScript(ops_script_file)) {
+          gzerr << "Could not run ops script file "<<ops_script_file<<"!" << std::endl;
+          return;
+        }
+      } else if(script_elem->HasElement("inline")) {
+        gzlog << "Running inline orocos ops script..." << std::endl;
+        std::string ops_script = script_elem->Get<std::string>();
+        if(!deployer->getProvider<RTT::Scripting>("scripting")->eval(ops_script)) {
+          gzerr << "Could not run inline ops script!" << std::endl;
+          return;
+        }
+      }
+
+      script_elem = script_elem->GetNextElement("orocosScript");
     }
   }
 }
