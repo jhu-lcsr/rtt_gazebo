@@ -34,7 +34,7 @@ install:
   # Build in an isolated catkin workspace
   - pushd ~/ws_isolated
   - catkin_make_isolated --install -j2 --cmake-args $EXTRA_CMAKE_ARGS
-  - source install_isolated/setup.bash
+  #- source install_isolated/setup.bash
   
   - pushd ~/ws
   - catkin_make -j2
