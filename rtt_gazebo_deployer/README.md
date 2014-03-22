@@ -112,9 +112,14 @@ run!
       <type>DefaultGazeboComponent</type>
       <name>sevenbot</name>
     </component>
-    <opsScript>
-      /* Run arbitrary ops script here */
-    </opsScript>
+    <orocosScript>
+      <filename>/path/to/script.ops</filename>
+    </orocosScript>
+    <orocosScript>
+      <inline>
+        /* Run arbitrary ops script here */
+      </inline>
+    </orocosScript>
   </plugin>
 </gazebo>
 ```

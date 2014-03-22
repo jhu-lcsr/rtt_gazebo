@@ -239,7 +239,7 @@ void GazeboDeployerModelPlugin::loadThread()
     return;
   }
 
-  // Get the orocos ops script to run in the deployer
+  // Get the orocos ops script(s) to run in the deployer
   if(sdf_->HasElement("orocosScript")) 
   {
     sdf::ElementPtr script_elem = sdf_->GetElement("orocosScript");

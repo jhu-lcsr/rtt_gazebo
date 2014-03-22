@@ -9,13 +9,15 @@
         <type>DefaultGazeboComponent</type>
         <name>sevenbot</name>
       </component>
-      <opsScript>
-        import("rtt_ros");
-        ros.import("rtt_std_msgs");
-        
-        /* a comment */
-        setPeriodicActivity("sevenbot",0.001,LowestPriority,ORO_SCHED_OTHER);
-      </opsScript>
+      <orocosScript>
+        <inline>
+          import("rtt_ros");
+          ros.import("rtt_std_msgs");
+
+          /* a comment */
+          setPeriodicActivity("sevenbot",0.001,LowestPriority,ORO_SCHED_OTHER);
+        </inline>
+      </orocosScript>
     </plugin>
   </gazebo>
 
