@@ -1,6 +1,8 @@
 #ifndef __RTT_GAZEBO_DEPLOYER_GAZEBO_DEPLOYER_MODEL_PLUGIN_H
 #define __RTT_GAZEBO_DEPLOYER_GAZEBO_DEPLOYER_MODEL_PLUGIN_H
 
+#include <boost/thread/mutex.hpp>
+
 // Gazebo
 #include <gazebo/gazebo.hh>
 #include <gazebo/physics/physics.hh>
@@ -60,6 +62,7 @@ namespace rtt_gazebo_deployer {
     static RTT::corba::TaskContextServer * taskcontext_server;
     //! Map between model names and deployment components
     static std::map<std::string,boost::shared_ptr<OCL::DeploymentComponent> > deployers;
+    static boost::mutex deferred_load_mutex;
 
     //! Deferred load in case something blocks
     boost::thread deferred_load_thread_;

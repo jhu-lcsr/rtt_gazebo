@@ -92,14 +92,28 @@ void GazeboDeployerModelPlugin::Load(
     gazebo::physics::ModelPtr parent, 
     sdf::ElementPtr sdf)
 {
+  RTT::Logger::Instance()->in("GazeboDeployerModelPlugin::load");
+
   // Save pointer to the model
   parent_model_ = parent;
   
   // Save the SDF source
   sdf_ = sdf;
+
+  // Perform the rest of the asynchronous loading
+  deferred_load_thread_ = boost::thread(boost::bind(&GazeboDeployerModelPlugin::loadThread, this));
+}
+
+// Load in seperate thread from Gazebo in case something blocks
+void GazeboDeployerModelPlugin::loadThread()
+{
+  boost::mutex::scoped_lock(deferred_load_mutex);
+  RTT::Logger::Instance()->in("GazeboDeployerModelPlugin::loadThread");
+
   
   // Create main gazebo deployer if necessary
   if(deployers.find("gazebo") == deployers.end()) {
+    RTT::log(RTT::Debug) << "Creating new default deployer named \"gazebo\"" << RTT::endlog();
     // Create the gazebo deployer
     deployers["gazebo"] = boost::make_shared<OCL::DeploymentComponent>("gazebo");
     deployers["gazebo"]->import("kdl_typekit");
@@ -117,19 +131,11 @@ void GazeboDeployerModelPlugin::Load(
 
   // Create component deployer if necessary
   if(deployers.find(deployer_name_) == deployers.end()) {
+    RTT::log(RTT::Debug) << "Creating new deployer named \"" << deployer_name_ << "\"" << RTT::endlog();
     deployers[deployer_name_] = boost::make_shared<OCL::DeploymentComponent>(deployer_name_);
     deployers[deployer_name_]->connectPeers(deployers["gazebo"].get());
     RTT::corba::TaskContextServer::Create(deployers[deployer_name_].get());
   }
-
-  // Perform the rest of the asynchronous loading
-  deferred_load_thread_ = boost::thread(boost::bind(&GazeboDeployerModelPlugin::loadThread, this));
-}
-
-// Load in seperate thread from Gazebo in case something blocks
-void GazeboDeployerModelPlugin::loadThread()
-{
-  RTT::Logger::Instance()->in("GazeboDeployerModelPlugin::loadThread");
 
   // Error message if the model couldn't be found
   if (!parent_model_) {
