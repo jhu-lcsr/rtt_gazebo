@@ -68,8 +68,8 @@ GZ_REGISTER_MODEL_PLUGIN(GazeboDeployerModelPlugin);
 
 // Static definitions
 RTT::corba::TaskContextServer * GazeboDeployerModelPlugin::taskcontext_server;
-
 std::map<std::string,OCL::DeploymentComponent*> GazeboDeployerModelPlugin::deployers;
+boost::mutex GazeboDeployerModelPlugin::deferred_load_mutex;
 
 GazeboDeployerModelPlugin::GazeboDeployerModelPlugin() : 
   gazebo::ModelPlugin()
@@ -107,9 +107,10 @@ void GazeboDeployerModelPlugin::Load(
 // Load in seperate thread from Gazebo in case something blocks
 void GazeboDeployerModelPlugin::loadThread()
 {
-  boost::mutex::scoped_lock(deferred_load_mutex);
-  RTT::Logger::Instance()->in("GazeboDeployerModelPlugin::loadThread");
+  boost::mutex::scoped_lock load_lock(deferred_load_mutex);
+  boost::mutex::scoped_lock update_lock(update_caller_mutex_);
 
+  RTT::Logger::Instance()->in("GazeboDeployerModelPlugin::loadThread");
   
   // Create main gazebo deployer if necessary
   if(deployers.find("gazebo") == deployers.end()) {
@@ -276,11 +277,15 @@ void GazeboDeployerModelPlugin::loadThread()
 // Called by the world update start event
 void GazeboDeployerModelPlugin::gazeboUpdate()
 {
-  // Call orocos RTT model component gazebo.update() operations
-  for(std::vector<GazeboUpdateCaller>::iterator caller = gazebo_update_callers_.begin();
-      caller != gazebo_update_callers_.end();
-      ++caller)
-  {
-    (*caller)(parent_model_);
+  boost::mutex::scoped_lock lock(update_caller_mutex_, boost::try_to_lock);
+
+  if(lock) {
+    // Call orocos RTT model component gazebo.update() operations
+    for(std::vector<GazeboUpdateCaller>::iterator caller = gazebo_update_callers_.begin();
+        caller != gazebo_update_callers_.end();
+        ++caller)
+    {
+      (*caller)(parent_model_);
+    }
   }
 }
