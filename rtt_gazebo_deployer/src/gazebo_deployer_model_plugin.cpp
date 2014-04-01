@@ -69,7 +69,7 @@ GZ_REGISTER_MODEL_PLUGIN(GazeboDeployerModelPlugin);
 // Static definitions
 RTT::corba::TaskContextServer * GazeboDeployerModelPlugin::taskcontext_server;
 
-std::map<std::string,boost::shared_ptr<OCL::DeploymentComponent> > GazeboDeployerModelPlugin::deployers;
+std::map<std::string,OCL::DeploymentComponent*> GazeboDeployerModelPlugin::deployers;
 
 GazeboDeployerModelPlugin::GazeboDeployerModelPlugin() : 
   gazebo::ModelPlugin()
@@ -113,13 +113,13 @@ void GazeboDeployerModelPlugin::loadThread()
   
   // Create main gazebo deployer if necessary
   if(deployers.find("gazebo") == deployers.end()) {
-    RTT::log(RTT::Debug) << "Creating new default deployer named \"gazebo\"" << RTT::endlog();
+    RTT::log(RTT::Info) << "Creating new default deployer named \"gazebo\"" << RTT::endlog();
     // Create the gazebo deployer
-    deployers["gazebo"] = boost::make_shared<OCL::DeploymentComponent>("gazebo");
+    deployers["gazebo"] = new OCL::DeploymentComponent("gazebo");
     deployers["gazebo"]->import("kdl_typekit");
 
     // Attach the taskcontext server to this component
-    taskcontext_server = RTT::corba::TaskContextServer::Create(deployers["gazebo"].get());
+    taskcontext_server = RTT::corba::TaskContextServer::Create(deployers["gazebo"]);
   }
 
   // Check if this deployer should have a custom name
@@ -130,11 +130,11 @@ void GazeboDeployerModelPlugin::loadThread()
   }
 
   // Create component deployer if necessary
-  if(deployers.find(deployer_name_) == deployers.end()) {
-    RTT::log(RTT::Debug) << "Creating new deployer named \"" << deployer_name_ << "\"" << RTT::endlog();
-    deployers[deployer_name_] = boost::make_shared<OCL::DeploymentComponent>(deployer_name_);
-    deployers[deployer_name_]->connectPeers(deployers["gazebo"].get());
-    RTT::corba::TaskContextServer::Create(deployers[deployer_name_].get());
+  if(deployer_name_ != "gazebo" && deployers.find(deployer_name_) == deployers.end()) {
+    RTT::log(RTT::Info) << "Creating new deployer named \"" << deployer_name_ << "\"" << RTT::endlog();
+    deployers[deployer_name_] = new OCL::DeploymentComponent(deployer_name_);
+    deployers[deployer_name_]->connectPeers(deployers["gazebo"]);
+    RTT::corba::TaskContextServer::Create(deployers[deployer_name_]);
   }
 
   // Error message if the model couldn't be found
@@ -143,7 +143,7 @@ void GazeboDeployerModelPlugin::loadThread()
   }
 
   // Get a pointer to this model's deployer
-  boost::shared_ptr<OCL::DeploymentComponent> deployer = deployers[deployer_name_];
+  OCL::DeploymentComponent *deployer = deployers[deployer_name_];
 
   // Check if there is a special gazebo component that should be connected to the world
   if(sdf_->HasElement("component")) 

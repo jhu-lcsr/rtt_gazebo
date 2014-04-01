@@ -61,7 +61,7 @@ namespace rtt_gazebo_deployer {
     //! Server for connecting to the deployer over CORBA
     static RTT::corba::TaskContextServer * taskcontext_server;
     //! Map between model names and deployment components
-    static std::map<std::string,boost::shared_ptr<OCL::DeploymentComponent> > deployers;
+    static std::map<std::string,OCL::DeploymentComponent*> deployers;
     static boost::mutex deferred_load_mutex;
 
     //! Deferred load in case something blocks
