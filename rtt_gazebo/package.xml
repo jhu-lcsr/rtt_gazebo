@@ -8,6 +8,8 @@
   <buildtool_depend>catkin</buildtool_depend>
   <run_depend>rtt_gazebo_deployer</run_depend>
   <run_depend>rtt_gazebo_console</run_depend>
+  <run_depend>rtt_gazebo_examples</run_depend>
+  <run_depend>rtt_gazebo_system</run_depend>
 
   <export>
     <metapackage/>
