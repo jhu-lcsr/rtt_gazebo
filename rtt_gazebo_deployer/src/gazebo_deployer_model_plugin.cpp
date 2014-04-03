@@ -108,7 +108,6 @@ void GazeboDeployerModelPlugin::Load(
 void GazeboDeployerModelPlugin::loadThread()
 {
   boost::mutex::scoped_lock load_lock(deferred_load_mutex);
-  boost::mutex::scoped_lock update_lock(update_caller_mutex_);
 
   RTT::Logger::Instance()->in("GazeboDeployerModelPlugin::loadThread");
   
@@ -277,7 +276,7 @@ void GazeboDeployerModelPlugin::loadThread()
 // Called by the world update start event
 void GazeboDeployerModelPlugin::gazeboUpdate()
 {
-  boost::mutex::scoped_lock lock(update_caller_mutex_, boost::try_to_lock);
+  boost::mutex::scoped_lock lock(deferred_load_mutex, boost::try_to_lock);
 
   if(lock) {
     // Call orocos RTT model component gazebo.update() operations
