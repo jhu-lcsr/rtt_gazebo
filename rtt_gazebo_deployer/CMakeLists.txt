@@ -31,6 +31,7 @@ orocos_use_package( orocos-rtt-corba )
 orocos_use_package( rtt-typekit )
 
 ## Gazebo RTT plugin
+add_definitions(-DRTT_COMPONENT)
 add_library(${PROJECT_NAME} 
   src/gazebo_deployer_model_plugin.cpp)
 #set_target_properties(${PROJECT_NAME} PROPERTIES COMPILE_FLAGS -DRTT_STATIC)

@@ -85,7 +85,6 @@ namespace rtt_gazebo_deployer {
     //! Operation for polling the model component 
     typedef RTT::OperationCaller<void(gazebo::physics::ModelPtr)> GazeboUpdateCaller;
     std::vector<GazeboUpdateCaller> gazebo_update_callers_;
-    boost::mutex update_caller_mutex_;
   };
 }
 
