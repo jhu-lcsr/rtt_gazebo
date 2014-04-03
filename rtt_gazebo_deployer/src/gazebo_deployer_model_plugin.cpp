@@ -117,7 +117,9 @@ void GazeboDeployerModelPlugin::loadThread()
     RTT::log(RTT::Info) << "Creating new default deployer named \"gazebo\"" << RTT::endlog();
     // Create the gazebo deployer
     deployers["gazebo"] = new OCL::DeploymentComponent("gazebo");
-    deployers["gazebo"]->import("kdl_typekit");
+    deployers["gazebo"]->import("rtt_rosnode");
+    deployers["gazebo"]->import("rtt_rosdeployment");
+    static_cast<RTT::TaskContext*>(deployers["gazebo"])->loadService("rosdeployment");
 
     // Attach the taskcontext server to this component
     taskcontext_server = RTT::corba::TaskContextServer::Create(deployers["gazebo"]);
@@ -135,6 +137,9 @@ void GazeboDeployerModelPlugin::loadThread()
     RTT::log(RTT::Info) << "Creating new deployer named \"" << deployer_name_ << "\"" << RTT::endlog();
     deployers[deployer_name_] = new OCL::DeploymentComponent(deployer_name_);
     deployers[deployer_name_]->connectPeers(deployers["gazebo"]);
+    deployers[deployer_name_]->import("rtt_rosnode");
+    deployers[deployer_name_]->import("rtt_rosdeployment");
+    static_cast<RTT::TaskContext*>(deployers[deployer_name_])->loadService("rosdeployment");
     RTT::corba::TaskContextServer::Create(deployers[deployer_name_]);
   }
 
