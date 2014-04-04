@@ -56,6 +56,7 @@
 #include <rtt/transports/corba/TaskContextServer.hpp>
 
 #include <rtt_ros/rtt_ros.h>
+#include <rtt_rosclock/rtt_rosclock.h>
 
 // RTT/ROS Simulation Clock Activity
 
@@ -233,10 +234,6 @@ void GazeboDeployerModelPlugin::loadThread()
       model_components_.push_back(new_model_component);
       gazebo_update_callers_.push_back(gazebo_update_caller);
 
-      // Listen to the update event. This event is broadcast every simulation iteration.
-      update_connections_.push_back(gazebo::event::Events::ConnectWorldUpdateBegin(
-              boost::bind(&GazeboDeployerModelPlugin::gazeboUpdate, this)));
-
       // Get the next element
       component_elem = component_elem->GetNextElement("component");
     }
@@ -249,6 +246,22 @@ void GazeboDeployerModelPlugin::loadThread()
     gzerr << "Could not load any RTT components!" << std::endl;
     return;
   }
+
+  // Load initialization scripts
+  this->loadScripts();
+
+  // Listen to the update event. This event is broadcast every simulation iteration.
+  update_connections_.push_back(gazebo::event::Events::ConnectWorldUpdateEnd(
+          boost::bind(&GazeboDeployerModelPlugin::gazeboUpdate, this)));
+
+  RTT::log(RTT::Info) << "Gazebo rtt plugin loaded." << RTT::endlog();
+}
+
+void GazeboDeployerModelPlugin::loadScripts()
+{
+
+  // Get a pointer to this model's deployer
+  OCL::DeploymentComponent *deployer = deployers[deployer_name_];
 
   // Get the orocos ops script(s) to run in the deployer
   if(sdf_->HasElement("orocosScript")) 
@@ -276,12 +289,16 @@ void GazeboDeployerModelPlugin::loadThread()
       script_elem = script_elem->GetNextElement("orocosScript");
     }
   }
+
+  RTT::log(RTT::Info) << "Done executing Orocos scripts for gazebo model plugin." << RTT::endlog();
 }
 
 // Called by the world update start event
 void GazeboDeployerModelPlugin::gazeboUpdate()
 {
-  boost::mutex::scoped_lock lock(deferred_load_mutex, boost::try_to_lock);
+  RTT::Logger::Instance()->in("GazeboDeployerModelPlugin::gazeboUpdate");
+
+  boost::mutex::scoped_try_lock lock(deferred_load_mutex);
 
   if(lock) {
     // Call orocos RTT model component gazebo.update() operations

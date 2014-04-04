@@ -53,6 +53,9 @@ namespace rtt_gazebo_deployer {
     //! Continuation of Load() in seperate thread from Gazebo in case something blocks
     void loadThread();
 
+    //! Load any initialization scripts
+    void loadScripts();
+
     //! Called by the world update start event
     void gazeboUpdate();
 
