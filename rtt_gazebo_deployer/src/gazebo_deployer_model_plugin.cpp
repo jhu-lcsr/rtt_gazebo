@@ -237,14 +237,15 @@ void GazeboDeployerModelPlugin::loadThread()
       // Get the next element
       component_elem = component_elem->GetNextElement("component");
     }
+
+    if(model_components_.empty()) {
+      gzerr << "Could not load any RTT components!" << std::endl;
+      return;
+    }
+
   } else {
     RTT::log(RTT::Warning) << "No RTT component defined for Gazebo hooks." << RTT::endlog();
-    return;
-  }
-
-  if(model_components_.empty()) {
-    gzerr << "Could not load any RTT components!" << std::endl;
-    return;
+    // return;
   }
 
   // Load initialization scripts
@@ -279,7 +280,7 @@ void GazeboDeployerModelPlugin::loadScripts()
         }
       } else if(script_elem->HasElement("inline")) {
         gzlog << "Running inline orocos ops script..." << std::endl;
-        std::string ops_script = script_elem->Get<std::string>();
+        std::string ops_script = script_elem->GetElement("inline")->Get<std::string>();
         if(!deployer->getProvider<RTT::Scripting>("scripting")->eval(ops_script)) {
           gzerr << "Could not run inline ops script!" << std::endl;
           return;
