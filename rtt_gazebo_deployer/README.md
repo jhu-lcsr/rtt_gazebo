@@ -138,7 +138,6 @@ starting with `//`,  `#`, or `--` will comment out the rest of the script in an
         --[[ Run arbitrary lua script here --]]
       </inline>
     </luaScript>
-
   </plugin>
 </gazebo>
 ```
