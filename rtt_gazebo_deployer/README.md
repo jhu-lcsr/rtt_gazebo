@@ -87,16 +87,16 @@ The following tags are supported:
   * `<filename>...</filename>` The path to an Orocos Ops script file to be
     executed when the plugin is loaded.
   * `<inline>...</inline>` In-line Oroocs Ops script to be executed after the
-    plugin is loaded and the RTT component has been loaded. ***NOTE: only `/*
-    ...  */` comments can be used because Gazebo removes all line breaks from
-    parsed XML!*** 
+    plugin is loaded and the RTT component has been loaded. **NOTE: only 
+    `/* ... */` comments can be used because Gazebo removes all line breaks from
+    parsed XML!**
 * `<luaScript>`
   * `<filename>...</filename>` The path to an Orocos Lua script file to be
     executed when the plugin is loaded.
   * `<inline>...</inline>` In-line Oroocs Lua script to be executed after the
-    plugin is loaded and the RTT component has been loaded. ***NOTE: only `--[[
+    plugin is loaded and the RTT component has been loaded. **NOTE: only `--[[
     ... --]]` comments can be used because Gazebo removes all line breaks from
-    parsed XML!*** 
+    parsed XML!**
 * `<isolated/>` Load the RTT components in a DeploymentComponent specific to
   this model named "MODEL\_NAME\_\_deployer\_\_". Without this tag, all
   components are created in the "gazebo" DeploymentComponent.
