@@ -4,6 +4,7 @@
   <arg name="debug" default="false"/>
   <arg name="gui" default="true"/>
   <arg name="TAO" default="false"/>
+  <arg name="USE_LUA" default="false"/>
 
   <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
   <include file="$(find rtt_gazebo_examples)/test/empty_world.launch">
@@ -17,11 +18,11 @@
 
   <!-- Load the URDF into the ROS Parameter Server -->
   <param name="robot_description"
-	 command="$(find xacro)/xacro.py '$(find rtt_gazebo_examples)/test/testbot.xacro'" />
+	 command="$(find xacro)/xacro.py '$(find rtt_gazebo_examples)/test/testbot.xacro' USE_LUA:=$(arg USE_LUA)" />
 
   <!-- Call a python script to the run a service call to gazebo_ros to spawn a URDF robot -->
   <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" respawn="false" output="screen"
-	args="-urdf -model barrett_manager -param robot_description"/>
+	args="-urdf -model sevenbot -param robot_description"/>
 
   <!-- Launch the CORBA TO naming service -->
   <node if="$(arg TAO)" name="corba_naming_service" pkg="rtt_ros" type="corba-naming-service" args="-m 1"/>

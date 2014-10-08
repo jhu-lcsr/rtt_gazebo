@@ -54,6 +54,7 @@
 #include <rtt/scripting/Scripting.hpp>
 #include <rtt/transports/corba/corba.h>
 #include <rtt/transports/corba/TaskContextServer.hpp>
+#include <rtt/plugin/PluginLoader.hpp>
 
 #include <rtt_ros/rtt_ros.h>
 #include <rtt_rosclock/rtt_rosclock.h>
@@ -111,6 +112,8 @@ void GazeboDeployerModelPlugin::loadThread()
   boost::mutex::scoped_lock load_lock(deferred_load_mutex);
 
   RTT::Logger::Instance()->in("GazeboDeployerModelPlugin::loadThread");
+
+  gzlog << "Loading RTT Model Plugin..." << std::endl;
   
   // Create main gazebo deployer if necessary
   if(deployers.find("gazebo") == deployers.end()) {
@@ -278,8 +281,8 @@ void GazeboDeployerModelPlugin::loadScripts()
           return;
         }
       } else if(script_elem->HasElement("inline")) {
-        gzlog << "Running inline orocos ops script..." << std::endl;
-        std::string ops_script = script_elem->Get<std::string>();
+        std::string ops_script = script_elem->GetElement("inline")->Get<std::string>();
+        gzlog << "Running inline orocos ops script:"<< std::endl << ops_script << std::endl;
         if(!deployer->getProvider<RTT::Scripting>("scripting")->eval(ops_script)) {
           gzerr << "Could not run inline ops script!" << std::endl;
           return;
@@ -289,8 +292,60 @@ void GazeboDeployerModelPlugin::loadScripts()
       script_elem = script_elem->GetNextElement("orocosScript");
     }
   }
+  
+  // Load lua scripting service
+  if(!RTT::plugin::PluginLoader::Instance()->loadService("Lua", deployer)) {
+    gzerr << "Could not load lua service." << std::endl;
+    return;
+  }
 
-  RTT::log(RTT::Info) << "Done executing Orocos scripts for gazebo model plugin." << RTT::endlog();
+  RTT::OperationCaller<bool(std::string)> exec_file = 
+    deployer->provides("Lua")->getOperation("exec_file");
+  RTT::OperationCaller<bool(std::string)> exec_str = 
+    deployer->provides("Lua")->getOperation("exec_str");
+
+  if(!exec_file.ready() || !exec_str.ready()) {
+    gzerr << "Could not get lua operations." << std::endl;
+    return;
+  }
+
+  // Load rttlib for first-class operation support
+  exec_str("require(\"rttlib\")");
+  // Define convenience variables
+  exec_str("\
+gs = rtt.provides();\
+tc = rtt.getTC();\
+depl = tc;");
+
+  // Get lua scripts to run in the deployer
+  if(sdf_->HasElement("luaScript"))
+  {
+
+    sdf::ElementPtr script_elem = sdf_->GetElement("luaScript");
+
+    while(script_elem && script_elem->GetName() == "luaScript") 
+    {
+      if(script_elem->HasElement("filename")) {
+        std::string lua_script_file = script_elem->GetElement("filename")->Get<std::string>();
+        gzlog << "Running orocos lua script file "<<lua_script_file<<"..." << std::endl;
+        if(!exec_file(lua_script_file)) {
+          gzerr << "Could not run lua script file "<<lua_script_file<<"!" << std::endl;
+          return;
+        }
+      } else if(script_elem->HasElement("inline")) {
+        std::string lua_script = script_elem->GetElement("inline")->Get<std::string>();
+        gzlog << "Running inline orocos lua script:" << std::endl << lua_script << std::endl;
+        if(!exec_str(lua_script)) {
+          gzerr << "Could not run inline lua script!" << std::endl;
+          return;
+        }
+      }
+
+      script_elem = script_elem->GetNextElement("luaScript");
+    }
+  }
+
+  gzlog << "Done executing Orocos scripts for gazebo model plugin." << std::endl;
 }
 
 // Called by the world update start event

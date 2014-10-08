@@ -83,12 +83,20 @@ The following tags are required:
   * `<name>...</name>` The name of the component.
 
 The following tags are supported:
-* `<opsScript>...</opsScript>` In-line Oroocs Ops script to be executed after the
-  plugin is loaded and the RTT component has been loaded. ***NOTE: only `/* ...
-  */` comments can be used because Gazebo removes all line breaks from parsed
-  XML!*** 
-* `<opsScriptFile>/path/to/file.ops</opsScriptFile>` The path to an Orocos Ops
-  script file to be executed when the plugin is loaded.
+* `<orocosScript>`
+  * `<filename>...</filename>` The path to an Orocos Ops script file to be
+    executed when the plugin is loaded.
+  * `<inline>...</inline>` In-line Oroocs Ops script to be executed after the
+    plugin is loaded and the RTT component has been loaded. ***NOTE: only `/*
+    ...  */` comments can be used because Gazebo removes all line breaks from
+    parsed XML!*** 
+* `<luaScript>`
+  * `<filename>...</filename>` The path to an Orocos Lua script file to be
+    executed when the plugin is loaded.
+  * `<inline>...</inline>` In-line Oroocs Lua script to be executed after the
+    plugin is loaded and the RTT component has been loaded. ***NOTE: only `--[[
+    ... --]]` comments can be used because Gazebo removes all line breaks from
+    parsed XML!*** 
 * `<isolated/>` Load the RTT components in a DeploymentComponent specific to
   this model named "MODEL\_NAME\_\_deployer\_\_". Without this tag, all
   components are created in the "gazebo" DeploymentComponent.
@@ -98,10 +106,15 @@ DefaultGazeboComponent with the same name as the mode in an isolated
 DeploymentComponent, and then execute some Orocos Ops script, which in this case
 is given in-line in the XML file:
 
-**NOTE:** only `/* ... */` comments can be used because Gazebo removes all line
-breaks from parsed XML! Single-line comments starting with `//` or `#` will
-comment out the rest of the script in the `<opsScript>` block, and it will not
-run!
+**NOTE:** only fully-terminated comments can be used in `inline` scripts
+because Gazebo removes all line breaks from parsed XML! Single-line comments
+starting with `//`,  `#`, or `--` will comment out the rest of the script in an
+`<inline>` block, and it will not run!
+
+**NOTE:** for Lua scripts, the following variables are defined:
+* `gs` -- RTT global service
+* `tc` -- Attached RTT TaskContext
+* `depl` -- The deployer used by this model
 
 ```xml
 <gazebo>

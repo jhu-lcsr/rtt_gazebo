@@ -9,15 +9,31 @@
         <type>DefaultGazeboComponent</type>
         <name>sevenbot</name>
       </component>
-      <orocosScript>
-        <inline>
-          import("rtt_ros");
-          ros.import("rtt_std_msgs");
-
-          /* a comment */
-          setPeriodicActivity("sevenbot",0.001,LowestPriority,ORO_SCHED_OTHER);
-        </inline>
-      </orocosScript>
+      <xacro:unless value="$(arg USE_LUA)">
+        <orocosScript>
+          <inline>
+            import("rtt_ros");
+            /* comments in inline scripts must be terminated */
+            setPeriodicActivity("sevenbot",0.001,LowestPriority,ORO_SCHED_OTHER);
+            sevenbot.kp = 1.5;
+          </inline>
+        </orocosScript>
+      </xacro:unless>
+      <xacro:if value="$(arg USE_LUA)">
+        <luaScript>
+          <inline>
+            depl:import("rtt_ros");
+            --[[ comments in inline scripts must be terminated --]]
+            depl:setPeriodicActivity(
+              "sevenbot",
+              0.001,
+              depl:getAttribute("LowestPriority"):get(),
+              rtt.globals.ORO_SCHED_OTHER);
+            sevenbot = depl:getPeer("sevenbot");
+            sevenbot:getProperty("kp"):set(1.5);
+          </inline>
+        </luaScript>
+      </xacro:if>
     </plugin>
   </gazebo>
 
