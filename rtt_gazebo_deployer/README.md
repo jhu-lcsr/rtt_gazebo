@@ -133,6 +133,12 @@ starting with `//`,  `#`, or `--` will comment out the rest of the script in an
         /* Run arbitrary ops script here */
       </inline>
     </orocosScript>
+    <luaScript>
+      <inline>
+        --[[ Run arbitrary lua script here --]]
+      </inline>
+    </luaScript>
+
   </plugin>
 </gazebo>
 ```
