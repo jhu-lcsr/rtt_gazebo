@@ -60,7 +60,7 @@ namespace rtt_gazebo_deployer {
     void gazeboUpdate();
 
   private:
-    
+
     //! Server for connecting to the deployer over CORBA
     static RTT::corba::TaskContextServer * taskcontext_server;
     //! Map between model names and deployment components
@@ -85,7 +85,13 @@ namespace rtt_gazebo_deployer {
     //! The name of the RTT component loaded in the deployer which should be connected to gazebo
     std::vector<RTT::TaskContext*> model_components_;
 
-    //! Operation for polling the model component 
+    //! The links in the model
+    gazebo::physics::Link_V model_links_;
+
+    //! Actual link gravity modes
+    std::vector<std::pair<gazebo::physics::LinkPtr, bool> > actual_gravity_modes_;
+
+    //! Operation for polling the model component
     typedef RTT::OperationCaller<void(gazebo::physics::ModelPtr)> GazeboUpdateCaller;
     std::vector<GazeboUpdateCaller> gazebo_update_callers_;
   };

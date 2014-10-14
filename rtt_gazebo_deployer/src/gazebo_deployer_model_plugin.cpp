@@ -73,7 +73,7 @@ RTT::corba::TaskContextServer * GazeboDeployerModelPlugin::taskcontext_server;
 std::map<std::string,OCL::DeploymentComponent*> GazeboDeployerModelPlugin::deployers;
 boost::mutex GazeboDeployerModelPlugin::deferred_load_mutex;
 
-GazeboDeployerModelPlugin::GazeboDeployerModelPlugin() : 
+GazeboDeployerModelPlugin::GazeboDeployerModelPlugin() :
   gazebo::ModelPlugin()
 {
 }
@@ -91,18 +91,30 @@ GazeboDeployerModelPlugin::~GazeboDeployerModelPlugin()
 
 // Overloaded Gazebo entry point
 void GazeboDeployerModelPlugin::Load(
-    gazebo::physics::ModelPtr parent, 
+    gazebo::physics::ModelPtr parent,
     sdf::ElementPtr sdf)
 {
   RTT::Logger::Instance()->in("GazeboDeployerModelPlugin::load");
 
   // Save pointer to the model
   parent_model_ = parent;
-  
+
   // Save the SDF source
   sdf_ = sdf;
 
   // Perform the rest of the asynchronous loading
+  // This is important since RTT scripts need the gazebo clock to tick
+  // forward. Make the model weightless while this happens, the actual
+  // gravity modes will be restored at the end of the load thread.
+  model_links_ = parent_model_->GetLinks();
+  for(gazebo::physics::Link_V::iterator it = model_links_.begin();
+      it != model_links_.end();
+      ++it)
+  {
+    actual_gravity_modes_.push_back(
+        std::pair<gazebo::physics::LinkPtr, bool>(*it, (*it)->GetGravityMode()));
+    (*it)->SetGravityMode(false);
+  }
   deferred_load_thread_ = boost::thread(boost::bind(&GazeboDeployerModelPlugin::loadThread, this));
 }
 
@@ -114,7 +126,7 @@ void GazeboDeployerModelPlugin::loadThread()
   RTT::Logger::Instance()->in("GazeboDeployerModelPlugin::loadThread");
 
   gzlog << "Loading RTT Model Plugin..." << std::endl;
-  
+
   // Create main gazebo deployer if necessary
   if(deployers.find("gazebo") == deployers.end()) {
     RTT::log(RTT::Info) << "Creating new default deployer named \"gazebo\"" << RTT::endlog();
@@ -132,7 +144,7 @@ void GazeboDeployerModelPlugin::loadThread()
   if(sdf_->HasElement("isolated")) {
     deployer_name_ = parent_model_->GetName()+std::string("__deployer__");
   } else {
-    deployer_name_ = "gazebo"; 
+    deployer_name_ = "gazebo";
   }
 
   // Create component deployer if necessary
@@ -155,13 +167,13 @@ void GazeboDeployerModelPlugin::loadThread()
   OCL::DeploymentComponent *deployer = deployers[deployer_name_];
 
   // Check if there is a special gazebo component that should be connected to the world
-  if(sdf_->HasElement("component")) 
+  if(sdf_->HasElement("component"))
   {
     RTT::log(RTT::Info) << "Loading Gazebo RTT components..." << RTT::endlog();
 
     sdf::ElementPtr component_elem = sdf_->GetElement("component");
 
-    while(component_elem && component_elem->GetName() == "component") 
+    while(component_elem && component_elem->GetName() == "component")
     {
       // Initialize gazebo component
       RTT::TaskContext* new_model_component = NULL;
@@ -212,7 +224,7 @@ void GazeboDeployerModelPlugin::loadThread()
         gzerr << "RTT model component does not have required \"gazebo.update\" operation." << std::endl; return; }
 
       // Configure the component with the parent model
-      RTT::OperationCaller<bool(gazebo::physics::ModelPtr)> gazebo_configure = 
+      RTT::OperationCaller<bool(gazebo::physics::ModelPtr)> gazebo_configure =
         new_model_component->provides("gazebo")->getOperation("configure");
 
       // Make sure the operation is ready
@@ -267,11 +279,11 @@ void GazeboDeployerModelPlugin::loadScripts()
   OCL::DeploymentComponent *deployer = deployers[deployer_name_];
 
   // Get the orocos ops script(s) to run in the deployer
-  if(sdf_->HasElement("orocosScript")) 
+  if(sdf_->HasElement("orocosScript"))
   {
     sdf::ElementPtr script_elem = sdf_->GetElement("orocosScript");
 
-    while(script_elem && script_elem->GetName() == "orocosScript") 
+    while(script_elem && script_elem->GetName() == "orocosScript")
     {
       if(script_elem->HasElement("filename")) {
         std::string ops_script_file = script_elem->GetElement("filename")->Get<std::string>();
@@ -292,16 +304,16 @@ void GazeboDeployerModelPlugin::loadScripts()
       script_elem = script_elem->GetNextElement("orocosScript");
     }
   }
-  
+
   // Load lua scripting service
   if(!RTT::plugin::PluginLoader::Instance()->loadService("Lua", deployer)) {
     gzerr << "Could not load lua service." << std::endl;
     return;
   }
 
-  RTT::OperationCaller<bool(std::string)> exec_file = 
+  RTT::OperationCaller<bool(std::string)> exec_file =
     deployer->provides("Lua")->getOperation("exec_file");
-  RTT::OperationCaller<bool(std::string)> exec_str = 
+  RTT::OperationCaller<bool(std::string)> exec_str =
     deployer->provides("Lua")->getOperation("exec_str");
 
   if(!exec_file.ready() || !exec_str.ready()) {
@@ -323,7 +335,7 @@ depl = tc;");
 
     sdf::ElementPtr script_elem = sdf_->GetElement("luaScript");
 
-    while(script_elem && script_elem->GetName() == "luaScript") 
+    while(script_elem && script_elem->GetName() == "luaScript")
     {
       if(script_elem->HasElement("filename")) {
         std::string lua_script_file = script_elem->GetElement("filename")->Get<std::string>();
@@ -345,7 +357,15 @@ depl = tc;");
     }
   }
 
-  gzlog << "Done executing Orocos scripts for gazebo model plugin." << std::endl;
+  RTT::log(RTT::Info) << "Done executing Orocos scripts for gazebo model plugin." << RTT::endlog();
+
+  // Restore gravity modes
+  for(std::vector<std::pair<gazebo::physics::LinkPtr, bool> >::iterator it = actual_gravity_modes_.begin();
+      it != actual_gravity_modes_.end();
+      ++it)
+  {
+    it->first->SetGravityMode(it->second);
+  }
 }
 
 // Called by the world update start event
