@@ -6,7 +6,7 @@ and also uses ROS for launching gazebo.
 
 First, launch gazebo with the demo model:
 ```shell
-roslaunch rtt_gazebo_deployer test.launch
+roslaunch rtt_gazebo_examples test.launch
 ```
 
 Then, in another shell, you can launch the rtt\_gazebo\_console:
