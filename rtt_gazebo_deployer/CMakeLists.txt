@@ -3,6 +3,7 @@ project(rtt_gazebo_deployer)
 
 ## Find catkin macros and  braries
 find_package(catkin REQUIRED)
+find_package(cmake_modules REQUIRED)
 
 find_package(OROCOS-RTT REQUIRED COMPONENTS rtt-scripting rtt-transport-corba)
 include(${OROCOS-RTT_USE_FILE_PATH}/UseOROCOS-RTT.cmake )

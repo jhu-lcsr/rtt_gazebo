@@ -3,6 +3,7 @@ project(rtt_gazebo_system)
 
 ## Find catkin macros and libraries
 find_package(catkin REQUIRED COMPONENTS)
+find_package(cmake_modules REQUIRED)
 
 # Depend on system install of Gazebo 
 find_package(gazebo REQUIRED)
