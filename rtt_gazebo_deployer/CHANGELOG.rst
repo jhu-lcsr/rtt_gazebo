@@ -2,6 +2,12 @@
 Changelog for package rtt_gazebo_deployer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* merge patch from meyerj to enable deployers without component section
+* rtt_gazebo_deployer: allow deployer instances without component section in SDF config (scripts only)
+* Contributors: Johannes Meyer, Jonathan Bohren
+
 0.1.0 (2014-12-08)
 ------------------
 * moved cmake_modules dependency lines to catkin components list

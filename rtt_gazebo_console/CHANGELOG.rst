@@ -2,6 +2,11 @@
 Changelog for package rtt_gazebo_console
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+* rtt_gazebo_console: fixed default variable assignment in console script
+* Contributors: Johannes Meyer
+
 0.1.0 (2014-12-08)
 ------------------
 * rtt_rosclock api changes, adding rosdeployment

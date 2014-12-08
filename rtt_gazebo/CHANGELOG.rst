@@ -2,6 +2,9 @@
 Changelog for package rtt_gazebo
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Forthcoming
+-----------
+
 0.1.0 (2014-12-08)
 ------------------
 * Fixing bad rtt_ros cmake and adding all deps to metapackage
