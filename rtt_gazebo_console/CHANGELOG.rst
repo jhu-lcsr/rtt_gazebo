@@ -2,8 +2,8 @@
 Changelog for package rtt_gazebo_console
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.1 (2014-12-08)
+------------------
 * rtt_gazebo_console: fixed default variable assignment in console script
 * Contributors: Johannes Meyer
 
