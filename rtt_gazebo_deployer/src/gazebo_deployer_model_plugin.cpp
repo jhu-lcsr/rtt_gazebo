@@ -252,14 +252,15 @@ void GazeboDeployerModelPlugin::loadThread()
       // Get the next element
       component_elem = component_elem->GetNextElement("component");
     }
+
+    if(model_components_.empty()) {
+      gzerr << "Could not load any RTT components!" << std::endl;
+      return;
+    }
+
   } else {
     RTT::log(RTT::Warning) << "No RTT component defined for Gazebo hooks." << RTT::endlog();
-    return;
-  }
-
-  if(model_components_.empty()) {
-    gzerr << "Could not load any RTT components!" << std::endl;
-    return;
+    // return;
   }
 
   // Load initialization scripts

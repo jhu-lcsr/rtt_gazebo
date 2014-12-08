@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
 
-${OROCOS_TARGET:=gnulinux}
+: ${OROCOS_TARGET:=gnulinux}
 
 rosrun rtt_gazebo_console console-$OROCOS_TARGET "$@"
