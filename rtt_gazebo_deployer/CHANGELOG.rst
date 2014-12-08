@@ -2,8 +2,8 @@
 Changelog for package rtt_gazebo_deployer
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.0 (2014-12-08)
+------------------
 * moved cmake_modules dependency lines to catkin components list
 * attempting indigo build.  fixed Eigen dependency by adding cmake_modules package.
 * rtt_gazebo_deployer: disabling gravity on model while loading scripts, then restoring after scripts are done loading

@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>rtt_gazebo_examples</name>
-  <version>0.0.0</version>
+  <version>0.1.0</version>
   <description>The rtt_gazebo_examples package</description>
 
   <maintainer email="jbo@jhu.edu">jbohren</maintainer>

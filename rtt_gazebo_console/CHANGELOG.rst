@@ -2,8 +2,8 @@
 Changelog for package rtt_gazebo_console
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Forthcoming
------------
+0.1.0 (2014-12-08)
+------------------
 * rtt_rosclock api changes, adding rosdeployment
 * missing build dep
 * Fixing bad rtt_ros cmake and adding all deps to metapackage
