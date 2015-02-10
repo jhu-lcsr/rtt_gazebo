@@ -324,11 +324,6 @@ void GazeboDeployerModelPlugin::loadScripts()
 
   // Load rttlib for first-class operation support
   exec_str("require(\"rttlib\")");
-  // Define convenience variables
-  exec_str("\
-gs = rtt.provides();\
-tc = rtt.getTC();\
-depl = tc;");
 
   // Get lua scripts to run in the deployer
   if(sdf_->HasElement("luaScript"))
