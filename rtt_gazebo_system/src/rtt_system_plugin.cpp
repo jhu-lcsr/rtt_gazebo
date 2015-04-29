@@ -98,18 +98,23 @@ void RTTSystemPlugin::updateClockLoop()
 
     // Update the clock from the simulation time and execute the SimClockActivities
     // NOTE: all orocos TaskContexts which use a SimClockActivity are updated within this call
+#ifdef RTT_GAZEBO_DEBUG
     static rtt_rosclock::WallProf prof(5.0);
     static rtt_rosclock::WallThrottle throttle(ros::Duration(1.0));
 
     prof.tic();
+#endif
+
     rtt_rosclock::update_sim_clock(ros::Time(gz_time.sec, gz_time.nsec));
+
+#ifdef RTT_GAZEBO_DEBUG
     prof.toc();
     if(throttle.ready()) {
       prof.analyze();
-      RTT::log(RTT::Info) << prof.mean() << " +/- " << prof.stddev() <<" [s] ("<<prof.n()<<") for update_sim_clock()" << RTT::endlog();
+      RTT::log(RTT::Debug) << prof.mean() << " +/- " << prof.stddev() <<" [s] ("<<prof.n()<<") for update_sim_clock()" << RTT::endlog();
     }
-
     static ros::Time last_update_time = rtt_rosclock::rtt_wall_now();
+#endif
   }
 }
 
