@@ -3,6 +3,7 @@
 
 // Boost
 #include <boost/bind.hpp>
+#include <boost/thread/locks.hpp>
 
 // Gazebo
 #include <gazebo/gazebo.hh>
@@ -24,6 +25,8 @@
 
 // RTT/ROS Simulation Clock Activity
 #include <rtt_rosclock/rtt_rosclock.h>
+#include <rtt_rosclock/prof.h>
+#include <rtt_rosclock/throttle.h>
 
 #include "rtt_system_plugin.h"
 
@@ -49,16 +52,24 @@ void RTTSystemPlugin::Load(int argc, char **argv)
 
 void RTTSystemPlugin::Init()
 {
-  // Initialize and enable the simulation clock 
+  // Initialize and enable the simulation clock
   rtt_rosclock::use_manual_clock();
   rtt_rosclock::enable_sim();
-  
-  update_connection_ = 
+
+  update_connection_ =
     gazebo::event::Events::ConnectWorldUpdateBegin(
         boost::bind(&RTTSystemPlugin::updateClock, this));
+
+  // TODO: Create a worldupdateend connection
+  
+  simulate_clock_ = true;
+
+  // Start update thread
+  update_thread_ = boost::thread(
+      boost::bind(&RTTSystemPlugin::updateClockLoop, this));
 }
 
-RTTSystemPlugin::~RTTSystemPlugin() 
+RTTSystemPlugin::~RTTSystemPlugin()
 {
   // Stop the Orb thread
   if(!CORBA::is_nil(RTT::corba::TaskContextServer::orb)) {
@@ -70,11 +81,36 @@ RTTSystemPlugin::~RTTSystemPlugin()
 
 void RTTSystemPlugin::updateClock()
 {
-  // Get the simulation time
-  gazebo::common::Time gz_time = gazebo::physics::get_world()->GetSimTime();
+  // Notify the update clock loop
+  update_cond_.notify_one();
+}
 
-  // Update the clock from the simulation time and execute the SimClockActivities
-  rtt_rosclock::update_sim_clock(ros::Time(gz_time.sec, gz_time.nsec));
+void RTTSystemPlugin::updateClockLoop()
+{
+  while(simulate_clock_)
+  {
+    // Wait for update signal
+    boost::unique_lock<boost::mutex> lock(update_mutex_);
+    update_cond_.wait(lock);
+
+    // Get the simulation time
+    gazebo::common::Time gz_time = gazebo::physics::get_world()->GetSimTime();
+
+    // Update the clock from the simulation time and execute the SimClockActivities
+    // NOTE: all orocos TaskContexts which use a SimClockActivity are updated within this call
+    static rtt_rosclock::WallProf prof(5.0);
+    static rtt_rosclock::WallThrottle throttle(ros::Duration(1.0));
+
+    prof.tic();
+    rtt_rosclock::update_sim_clock(ros::Time(gz_time.sec, gz_time.nsec));
+    prof.toc();
+    if(throttle.ready()) {
+      prof.analyze();
+      RTT::log(RTT::Info) << prof.mean() << " +/- " << prof.stddev() <<" [s] ("<<prof.n()<<") for update_sim_clock()" << RTT::endlog();
+    }
+
+    static ros::Time last_update_time = rtt_rosclock::rtt_wall_now();
+  }
 }
 
 GZ_REGISTER_SYSTEM_PLUGIN(rtt_gazebo_system::RTTSystemPlugin)

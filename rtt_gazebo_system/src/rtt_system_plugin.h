@@ -50,6 +50,14 @@ namespace rtt_gazebo_system {
   private:
     //! Event connection to the world update
     gazebo::event::ConnectionPtr update_connection_;
+
+    boost::thread update_thread_;
+    boost::mutex update_mutex_;
+    boost::condition_variable update_cond_;
+
+    bool simulate_clock_;
+
+    void updateClockLoop();
   };
 
 }
