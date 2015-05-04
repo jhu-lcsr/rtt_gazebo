@@ -63,6 +63,10 @@ void RTTSystemPlugin::Init()
   // TODO: Create a worldupdateend connection
   
   simulate_clock_ = true;
+
+  // Start update thread
+  update_thread_ = boost::thread(
+      boost::bind(&RTTSystemPlugin::updateClockLoop, this));
 }
 
 RTTSystemPlugin::~RTTSystemPlugin()
@@ -77,19 +81,17 @@ RTTSystemPlugin::~RTTSystemPlugin()
 
 void RTTSystemPlugin::updateClock()
 {
-  // Wait for previous update thread
-  if(update_thread_.joinable()) {
-    update_thread_.join();
-  }
-
-  // Start update thread
-  update_thread_ = boost::thread(
-      boost::bind(&RTTSystemPlugin::updateClockLoop, this));
+  // Notify the update clock loop
+  update_cond_.notify_one();
 }
 
 void RTTSystemPlugin::updateClockLoop()
 {
+  while(simulate_clock_)
   {
+    // Wait for update signal
+    boost::unique_lock<boost::mutex> lock(update_mutex_);
+    update_cond_.wait(lock);
 
     // Get the simulation time
     gazebo::common::Time gz_time = gazebo::physics::get_world()->GetSimTime();
