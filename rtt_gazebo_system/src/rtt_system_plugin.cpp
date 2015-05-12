@@ -60,11 +60,12 @@ void RTTSystemPlugin::Init()
     gazebo::event::Events::ConnectWorldUpdateEnd(
         boost::bind(&RTTSystemPlugin::updateClock, this));
 
-  // TODO: Create a worldupdateend connection
-  
-  simulate_clock_ = true;
+  stop_connection_ =
+    gazebo::event::Events::ConnectStop(
+        boost::bind(&RTTSystemPlugin::stop, this));
 
   // Start update thread
+  simulate_clock_ = true;
   update_thread_ = boost::thread(
       boost::bind(&RTTSystemPlugin::updateClockLoop, this));
 }
@@ -82,29 +83,36 @@ RTTSystemPlugin::~RTTSystemPlugin()
 void RTTSystemPlugin::updateClock()
 {
   // Notify the update clock loop
+  boost::lock_guard<boost::mutex> lock(update_mutex_);
   update_cond_.notify_one();
+}
+
+void RTTSystemPlugin::stop()
+{
+  simulate_clock_ = false;
 }
 
 void RTTSystemPlugin::updateClockLoop()
 {
-  while(simulate_clock_)
+  // Wait for update signal to start the loop
   {
-    // Wait for update signal
     boost::unique_lock<boost::mutex> lock(update_mutex_);
     update_cond_.wait(lock);
+  }
+
+  while(simulate_clock_)
+  {
+#ifdef RTT_GAZEBO_DEBUG
+    static rtt_rosclock::WallProf prof(5.0);
+    static rtt_rosclock::WallThrottle throttle(ros::Duration(1.0));
+    prof.tic();
+#endif
 
     // Get the simulation time
     gazebo::common::Time gz_time = gazebo::physics::get_world()->GetSimTime();
 
     // Update the clock from the simulation time and execute the SimClockActivities
-    // NOTE: all orocos TaskContexts which use a SimClockActivity are updated within this call
-#ifdef RTT_GAZEBO_DEBUG
-    static rtt_rosclock::WallProf prof(5.0);
-    static rtt_rosclock::WallThrottle throttle(ros::Duration(1.0));
-
-    prof.tic();
-#endif
-
+    // NOTE: all orocos TaskContexts which use a SimClockActivity are updated within this blocking call
     rtt_rosclock::update_sim_clock(ros::Time(gz_time.sec, gz_time.nsec));
 
 #ifdef RTT_GAZEBO_DEBUG

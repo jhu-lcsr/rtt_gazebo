@@ -46,10 +46,13 @@ namespace rtt_gazebo_system {
      */
     void updateClock();
 
+    void stop();
+
     void Update() { }
   private:
     //! Event connection to the world update
     gazebo::event::ConnectionPtr update_connection_;
+    gazebo::event::ConnectionPtr stop_connection_;
 
     boost::thread update_thread_;
     boost::mutex update_mutex_;
