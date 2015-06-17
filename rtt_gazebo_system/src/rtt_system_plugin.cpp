@@ -25,8 +25,11 @@
 
 // RTT/ROS Simulation Clock Activity
 #include <rtt_rosclock/rtt_rosclock.h>
+
+#ifdef RTT_GAZEBO_DEBUG
 #include <rtt_rosclock/prof.h>
 #include <rtt_rosclock/throttle.h>
+#endif
 
 #include "rtt_system_plugin.h"
 
