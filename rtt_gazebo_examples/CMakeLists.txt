@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(rtt_gazebo_examples)
-
+list(APPEND CMAKE_CXX_FLAGS "-std=c++11")
 ## Find catkin macros and libraries
 find_package(catkin REQUIRED COMPONENTS rtt_ros cmake_modules)
 
