@@ -11,8 +11,10 @@ include(${OROCOS-RTT_USE_FILE_PATH}/UseOROCOS-RTT.cmake )
 find_package(gazebo REQUIRED)
 
 # Add c++11 for Gazebo >= 6.0
-if(${GAZEBO_VERSION} GREATER 6)
-list(APPEND CMAKE_CXX_FLAGS "-std=c++11")
+if(${GAZEBO_VERSION})
+  if(${GAZEBO_VERSION} GREATER 6)
+    list(APPEND CMAKE_CXX_FLAGS "-std=c++11")
+  endif()
 endif()
 
 find_package(Eigen REQUIRED)
