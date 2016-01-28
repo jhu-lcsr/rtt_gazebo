@@ -60,13 +60,21 @@ void RTTSystemPlugin::Init()
     gazebo::event::Events::ConnectWorldUpdateEnd(
         boost::bind(&RTTSystemPlugin::updateClock, this));
 
-  // TODO: Create a worldupdateend connection
-  
   simulate_clock_ = true;
+  clock_changed_ = false;
+
+  // Start update thread
+  update_thread_ = boost::thread(
+      boost::bind(&RTTSystemPlugin::updateClockLoop, this));
 }
 
 RTTSystemPlugin::~RTTSystemPlugin()
 {
+  simulate_clock_ = false;
+  if(update_thread_.joinable()) {
+    update_thread_.join();
+  }
+
   // Stop the Orb thread
   if(!CORBA::is_nil(RTT::corba::TaskContextServer::orb)) {
     RTT::corba::TaskContextServer::ShutdownOrb();
@@ -77,20 +85,19 @@ RTTSystemPlugin::~RTTSystemPlugin()
 
 void RTTSystemPlugin::updateClock()
 {
-  // Wait for previous update thread
-  if(update_thread_.joinable()) {
-    update_thread_.join();
-  }
-
-  // Start update thread
-  update_thread_ = boost::thread(
-      boost::bind(&RTTSystemPlugin::updateClockLoop, this));
+  boost::mutex::scoped_lock lock(update_mutex_);
+  clock_changed_ = true;
+  update_cond_.notify_one();
 }
 
 void RTTSystemPlugin::updateClockLoop()
 {
+  while(simulate_clock_)
   {
-
+    boost::unique_lock<boost::mutex> lock(update_mutex_);
+    while(not clock_changed_) {
+      update_cond_.wait(lock);
+    }
     // Get the simulation time
     gazebo::common::Time gz_time = gazebo::physics::get_world()->GetSimTime();
 
