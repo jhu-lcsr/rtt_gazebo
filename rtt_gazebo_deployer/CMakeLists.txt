@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(rtt_gazebo_deployer)
-
 ## Find catkin macros and  braries
 find_package(catkin REQUIRED COMPONENTS 
   cmake_modules)
@@ -10,6 +9,13 @@ find_package(OROCOS-RTT REQUIRED COMPONENTS rtt-scripting rtt-transport-corba)
 include(${OROCOS-RTT_USE_FILE_PATH}/UseOROCOS-RTT.cmake )
 
 find_package(gazebo REQUIRED)
+
+# Add c++11 for Gazebo >= 6.0
+if(${GAZEBO_VERSION})
+  if(${GAZEBO_VERSION} GREATER 6)
+    list(APPEND CMAKE_CXX_FLAGS "-std=c++11")
+  endif()
+endif()
 
 find_package(Eigen REQUIRED)
 find_package(Boost COMPONENTS thread REQUIRED)
