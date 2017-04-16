@@ -7,6 +7,7 @@ find_package(OROCOS-RTT REQUIRED COMPONENTS
   rtt-scripting 
   rtt-transport-corba)
 
+find_package(Boost REQUIRED COMPONENTS program_options)
 include(${OROCOS-RTT_USE_FILE_PATH}/UseOROCOS-RTT.cmake )
 
 include_directories(
@@ -21,7 +22,7 @@ orocos_use_package( orocos-rtt-corba )
 
 add_definitions(-DRTT_STATIC)
 orocos_executable(console src/console.cpp)
-target_link_libraries(console ${USE_OROCOS_LIBRARIES})
+target_link_libraries(console ${USE_OROCOS_LIBRARIES} ${Boost_LIBRARIES})
 
 orocos_generate_package()
 
